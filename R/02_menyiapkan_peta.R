@@ -1,20 +1,54 @@
 # ============================================================
 # ATLAS VISUAL SULAWESI SELATAN
-# 02 - MENYIAPKAN DATA BATAS WILAYAH
+# 02 - MENYIAPKAN DATA BATAS WILAYAH DAN PETA
 # ============================================================
 
 
 # ------------------------------------------------------------
-# 1. PACKAGE
+# 1A. PACKAGE
 # ------------------------------------------------------------
 
 library(sf)
 library(dplyr)
 library(ggplot2)
+library(stringr)
 library(colorspace)
 
 # ------------------------------------------------------------
-# 2. MEMBACA FILE GEOJSON
+# 1B. MEMBACA DATA BERSIH
+# ------------------------------------------------------------
+
+data_bersih <- readRDS(
+  "data/data-bersih/atlas_sulsel.rds"
+)
+
+# ------------------------------------------------------------
+# 2. MEMBACA DATA KODE WILAYAH
+# ------------------------------------------------------------
+
+kode_wilayah <- readxl::read_excel(
+  "data/data-kode-wilayah/KODE WILAYAH SULSEL.xlsx"
+)
+
+kode_wilayah <- kode_wilayah %>%
+  rename(
+    kode_wilayah = `Kode Kab/Kota`,
+    kabupaten_kota = `Kabupaten/Kota`
+  ) %>%
+  mutate(
+    kode_wilayah = as.character(kode_wilayah),
+    kabupaten_kota = str_to_lower(
+      str_squish(kabupaten_kota)
+    )
+  ) %>%
+  select(
+    kabupaten_kota,
+    kode_wilayah
+  )
+
+
+# ------------------------------------------------------------
+# 3. MEMBACA BATAS WILAYAH
 # ------------------------------------------------------------
 
 peta <- st_read(
@@ -22,44 +56,76 @@ peta <- st_read(
   quiet = FALSE
 )
 
-# ------------------------------------------------------------
-# 3. MELIHAT INFORMASI DATA PETA
-# ------------------------------------------------------------
-
-print(peta)
-
-cat("\nJumlah polygon:", nrow(peta), "\n")
-
-cat("\nNama kolom:\n")
-
-print(names(peta))
-
-
-unique(peta$shapeISO)
-head(peta$shapeName, 30)
-table(peta$shapeGroup)
 
 # ------------------------------------------------------------
-# 4. CEK HASIL PETA
+# 4. MEMILIH 24 KABUPATEN/KOTA SULAWESI SELATAN
 # ------------------------------------------------------------
 
-cat("Jumlah polygon Sulawesi Selatan:",
-    nrow(peta_sulsel), "\n")
+wilayah_sulsel <- unique(
+  data_bersih$kabupaten_kota
+)
 
-cat("Jumlah kode wilayah yang NA:",
-    sum(is.na(peta_sulsel$kode_wilayah)), "\n")
+wilayah_sulsel <- str_to_lower(
+  str_squish(wilayah_sulsel)
+)
+
+peta_sulsel <- peta %>%
+  mutate(
+    nama_peta = str_to_lower(
+      str_squish(shapeName)
+    )
+  ) %>%
+  filter(
+    nama_peta %in% wilayah_sulsel
+  )
+
 
 # ------------------------------------------------------------
-# 5. MENGGABUNGKAN DATA IPM 2024 DENGAN PETA
+# 5. MENGHUBUNGKAN KODE WILAYAH DENGAN PETA
+# ------------------------------------------------------------
+
+peta_sulsel <- peta_sulsel %>%
+  left_join(
+    kode_wilayah,
+    by = c(
+      "nama_peta" = "kabupaten_kota"
+    )
+  )
+
+# ------------------------------------------------------------
+# 6. CEK HASIL PETA
+# ------------------------------------------------------------
+
+cat(
+  "Jumlah polygon Sulawesi Selatan:",
+  nrow(peta_sulsel),
+  "\n"
+)
+
+cat(
+  "Jumlah kode wilayah yang NA:",
+  sum(is.na(peta_sulsel$kode_wilayah)),
+  "\n"
+)
+
+
+# ------------------------------------------------------------
+# 7. DATA IPM TAHUN 2024
 # ------------------------------------------------------------
 
 data_ipm_2024 <- data_bersih %>%
-  filter(tahun == 2024) %>%
+  filter(
+    tahun == 2024
+  ) %>%
   select(
     kode_wilayah,
     kabupaten_kota,
     ipm
   )
+
+# ------------------------------------------------------------
+# 8. MENGGABUNGKAN IPM DENGAN PETA
+# ------------------------------------------------------------
 
 peta_ipm_2024 <- peta_sulsel %>%
   left_join(
@@ -68,20 +134,44 @@ peta_ipm_2024 <- peta_sulsel %>%
   )
 
 # ------------------------------------------------------------
-# 6. CHOROPLETH IPM 2024
+# 9. CEK DATA IPM
 # ------------------------------------------------------------
 
-peta_ipm <- ggplot(peta_ipm_2024) +
+cat(
+  "Jumlah wilayah dengan data IPM:",
+  nrow(peta_ipm_2024),
+  "\n"
+)
+
+cat(
+  "Jumlah IPM yang NA:",
+  sum(is.na(peta_ipm_2024$ipm)),
+  "\n"
+)
+
+# ------------------------------------------------------------
+# 10. PALET WARNA
+# ------------------------------------------------------------
+
+palet_ipm <- sequential_hcl(
+  5,
+  palette = "Blues 3"
+)
+
+# ------------------------------------------------------------
+# 11. CHOROPLETH IPM 2024
+# ------------------------------------------------------------
+
+peta_ipm <- ggplot(
+  peta_ipm_2024
+) +
   geom_sf(
     aes(fill = ipm),
     color = "white",
     linewidth = 0.3
   ) +
   scale_fill_gradientn(
-    colors = sequential_hcl(
-      5,
-      palette = "Blues 3"
-    ),
+    colors = palet_ipm,
     name = "IPM"
   ) +
   labs(
@@ -101,30 +191,21 @@ peta_ipm <- ggplot(peta_ipm_2024) +
     legend.position = "right"
   )
 
+
+# Menampilkan peta
 peta_ipm
 
 # ------------------------------------------------------------
-# 7. UJI PALET WARNA
+# 12A. UJI COLORBLIND
 # ------------------------------------------------------------
 
-palet_ipm <- sequential_hcl(
-  5,
-  palette = "Blues 3"
+deutan_palet <- deutan(
+  palet_ipm
 )
 
-# Simulasi deuteranopia
-deutan_palet <- deutan(palet_ipm)
-
-# Simulasi protanopia
-protan_palet <- protan(palet_ipm)
-
-palet_ipm
-deutan_palet
-protan_palet
-
-# ------------------------------------------------------------
-# 8. HASIL UJI COLORBLIND
-# ------------------------------------------------------------
+protan_palet <- protan(
+  palet_ipm
+)
 
 cat("\nPalet asli:\n")
 print(palet_ipm)
@@ -136,7 +217,49 @@ cat("\nSimulasi protanopia:\n")
 print(protan_palet)
 
 # ------------------------------------------------------------
-# 9. MENYIMPAN CHOROPLETH
+# 12B. VISUALISASI UJI COLORBLIND
+# ------------------------------------------------------------
+
+peta_deutan <- ggplot(peta_ipm_2024) +
+  geom_sf(
+    aes(fill = ipm),
+    color = "white",
+    linewidth = 0.3
+  ) +
+  scale_fill_gradientn(
+    colors = deutan_palet,
+    name = "IPM"
+  ) +
+  labs(
+    title = "Simulasi Deuteranopia",
+    subtitle = "Peta IPM Sulawesi Selatan 2024"
+  ) +
+  theme_void()
+
+
+peta_protan <- ggplot(peta_ipm_2024) +
+  geom_sf(
+    aes(fill = ipm),
+    color = "white",
+    linewidth = 0.3
+  ) +
+  scale_fill_gradientn(
+    colors = protan_palet,
+    name = "IPM"
+  ) +
+  labs(
+    title = "Simulasi Protanopia",
+    subtitle = "Peta IPM Sulawesi Selatan 2024"
+  ) +
+  theme_void()
+
+
+# Menampilkan hasil simulasi
+peta_deutan
+peta_protan
+
+# ------------------------------------------------------------
+# 13. SIMPAN CHOROPLETH
 # ------------------------------------------------------------
 
 ggsave(
@@ -145,4 +268,45 @@ ggsave(
   width = 8,
   height = 6,
   dpi = 300
+)
+
+# ------------------------------------------------------------
+# 14. SIMPAN HASIL UJI COLORBLIND
+# ------------------------------------------------------------
+
+ggsave(
+  filename = "keluaran/peta_ipm_2024_deuteranopia.png",
+  plot = peta_deutan,
+  width = 8,
+  height = 6,
+  dpi = 300
+)
+
+ggsave(
+  filename = "keluaran/peta_ipm_2024_protanopia.png",
+  plot = peta_protan,
+  width = 8,
+  height = 6,
+  dpi = 300
+)
+
+# ------------------------------------------------------------
+# 15. PESAN AKHIR
+# ------------------------------------------------------------
+
+cat("\n========================================\n")
+cat("PEMETAAN SELESAI\n")
+cat("========================================\n")
+cat(
+  "Jumlah polygon:",
+  nrow(peta_sulsel),
+  "\n"
+)
+cat(
+  "Jumlah IPM NA:",
+  sum(is.na(peta_ipm_2024$ipm)),
+  "\n"
+)
+cat(
+  "Output: keluaran/peta_ipm_2024.png\n"
 )
