@@ -291,22 +291,202 @@ ggsave(
 )
 
 # ------------------------------------------------------------
-# 15. PESAN AKHIR
+# 15. DATA KEMISKINAN TAHUN 2024
+# ------------------------------------------------------------
+
+data_kemiskinan_2024 <- data_bersih %>%
+  filter(tahun == 2024) %>%
+  select(
+    kode_wilayah,
+    kabupaten_kota,
+    kemiskinan
+  )
+
+# ------------------------------------------------------------
+# 16. MENGGABUNGKAN KEMISKINAN DENGAN PETA
+# ------------------------------------------------------------
+
+peta_kemiskinan_2024 <- peta_sulsel %>%
+  left_join(
+    data_kemiskinan_2024,
+    by = "kode_wilayah"
+  )
+
+# ------------------------------------------------------------
+# 17. CEK DATA KEMISKINAN
+# ------------------------------------------------------------
+
+cat(
+  "Jumlah wilayah dengan data kemiskinan:",
+  nrow(peta_kemiskinan_2024),
+  "\n"
+)
+
+cat(
+  "Jumlah kemiskinan yang NA:",
+  sum(is.na(peta_kemiskinan_2024$kemiskinan)),
+  "\n"
+)
+
+# ------------------------------------------------------------
+# 18. PALET WARNA KEMISKINAN
+# ------------------------------------------------------------
+
+palet_kemiskinan <- sequential_hcl(
+  5,
+  palette = "Blues 3"
+)
+
+# ------------------------------------------------------------
+# 19. CHOROPLETH KEMISKINAN 2024
+# ------------------------------------------------------------
+
+peta_kemiskinan <- ggplot(
+  peta_kemiskinan_2024
+) +
+  geom_sf(
+    aes(fill = kemiskinan),
+    color = "white",
+    linewidth = 0.3
+  ) +
+  scale_fill_gradientn(
+    colors = palet_kemiskinan,
+    name = "Kemiskinan (%)"
+  ) +
+  labs(
+    title = "Persentase Penduduk Miskin Sulawesi Selatan, 2024",
+    subtitle = "Persentase penduduk miskin menurut kabupaten/kota",
+    caption = "Sumber: BPS Provinsi Sulawesi Selatan"
+  ) +
+  theme_void() +
+  theme(
+    plot.title = element_text(
+      face = "bold",
+      size = 14
+    ),
+    plot.subtitle = element_text(
+      size = 11
+    ),
+    legend.position = "right"
+  )
+
+peta_kemiskinan
+
+# ------------------------------------------------------------
+# 20. UJI COLORBLIND KEMISKINAN
+# ------------------------------------------------------------
+
+deutan_kemiskinan <- deutan(
+  palet_kemiskinan
+)
+
+protan_kemiskinan <- protan(
+  palet_kemiskinan
+)
+
+# ------------------------------------------------------------
+# 21. VISUALISASI UJI COLORBLIND KEMISKINAN
+# ------------------------------------------------------------
+
+peta_kemiskinan_deutan <- ggplot(
+  peta_kemiskinan_2024
+) +
+  geom_sf(
+    aes(fill = kemiskinan),
+    color = "white",
+    linewidth = 0.3
+  ) +
+  scale_fill_gradientn(
+    colors = deutan_kemiskinan,
+    name = "Kemiskinan (%)"
+  ) +
+  labs(
+    title = "Simulasi Deuteranopia",
+    subtitle = "Peta kemiskinan Sulawesi Selatan 2024"
+  ) +
+  theme_void()
+
+
+peta_kemiskinan_protan <- ggplot(
+  peta_kemiskinan_2024
+) +
+  geom_sf(
+    aes(fill = kemiskinan),
+    color = "white",
+    linewidth = 0.3
+  ) +
+  scale_fill_gradientn(
+    colors = protan_kemiskinan,
+    name = "Kemiskinan (%)"
+  ) +
+  labs(
+    title = "Simulasi Protanopia",
+    subtitle = "Peta kemiskinan Sulawesi Selatan 2024"
+  ) +
+  theme_void()
+
+
+peta_kemiskinan_deutan
+peta_kemiskinan_protan
+
+# ------------------------------------------------------------
+# 22. SIMPAN PETA KEMISKINAN
+# ------------------------------------------------------------
+
+ggsave(
+  filename = "keluaran/peta_kemiskinan_2024.png",
+  plot = peta_kemiskinan,
+  width = 8,
+  height = 6,
+  dpi = 300
+)
+
+ggsave(
+  filename = "keluaran/peta_kemiskinan_2024_deuteranopia.png",
+  plot = peta_kemiskinan_deutan,
+  width = 8,
+  height = 6,
+  dpi = 300
+)
+
+ggsave(
+  filename = "keluaran/peta_kemiskinan_2024_protanopia.png",
+  plot = peta_kemiskinan_protan,
+  width = 8,
+  height = 6,
+  dpi = 300
+)
+
+# ------------------------------------------------------------
+# 23. PESAN AKHIR
 # ------------------------------------------------------------
 
 cat("\n========================================\n")
 cat("PEMETAAN SELESAI\n")
 cat("========================================\n")
+
 cat(
   "Jumlah polygon:",
   nrow(peta_sulsel),
   "\n"
 )
+
 cat(
   "Jumlah IPM NA:",
   sum(is.na(peta_ipm_2024$ipm)),
   "\n"
 )
+
 cat(
-  "Output: keluaran/peta_ipm_2024.png\n"
+  "Jumlah kemiskinan NA:",
+  sum(is.na(peta_kemiskinan_2024$kemiskinan)),
+  "\n"
+)
+
+cat(
+  "Output IPM: keluaran/peta_ipm_2024.png\n"
+)
+
+cat(
+  "Output kemiskinan: keluaran/peta_kemiskinan_2024.png\n"
 )
