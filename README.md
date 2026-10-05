@@ -8,7 +8,7 @@ Proyek Komputasi Statistika Lanjut - Atlas Visual Sulawesi
 - Indikator pendamping: Kemiskinan
 #Menurut BPS, kemiskinan dipandang sebagai ketidakmampuan dari sisi ekonomi untuk memenuhi kebutuhan dasar makanan dan bukan makanan yang diukur dari sisi pengeluaran. Penduduk dikategorikan miskin apabila rata-rata pengeluaran per kapita per bulan berada di bawah garis kemiskinan. Dalam proyek ini, kemiskinan digunakan sebagai **indikator pendamping** untuk memberikan konteks mengenai kondisi kesejahteraan ekonomi masyarakat dan membantu melihat hubungan antara tingkat kemiskinan dengan capaian pembangunan manusia.
 
-# Alasan :IPM dipilih sebagai indikator utama karena memberikan gambaran multidimensi mengenai capaian pembangunan manusia di setiap kabupaten/kota. Kemiskinan dipilih sebagai indikator pendamping karena dapat melengkapi informasi IPM dengan menunjukkan kondisi kesejahteraan ekonomi masyarakat.
+#Alasan :IPM dipilih sebagai indikator utama karena memberikan gambaran multidimensi mengenai capaian pembangunan manusia di setiap kabupaten/kota. Kemiskinan dipilih sebagai indikator pendamping karena dapat melengkapi informasi IPM dengan menunjukkan kondisi kesejahteraan ekonomi masyarakat.
 
 ## 3. Sumber Data
 Data yang digunakan merupakan data dari 24 kabupaten/kota Provinsi Sulawesi Selatan Tahun 2022 s.d 2024
