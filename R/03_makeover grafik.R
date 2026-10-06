@@ -1,7 +1,7 @@
 # ============================================================
 # ATLAS VISUAL SULAWESI SELATAN
-# MAKEOVER GRAFIK KEMISKINAN (LEGENDA DI SAMPING + JUDUL RINGKAS)
-# Indikator: Persentase Penduduk Miskin
+# MAKEOVER GRAFIK IPM (LEGENDA DI SAMPING + JUDUL RINGKAS)
+# Indikator: Indeks Pembangunan Manusia (IPM)
 # Tahun: 2024
 # ============================================================
 
@@ -19,43 +19,43 @@ data_2024 <- data_bersih %>%
 # Ambil angka provinsi untuk garis rujukan
 nilai_provinsi <- data_2024 %>%
   filter(str_detect(tolower(kabupaten_kota), "sulawesi selatan")) %>%
-  pull(kemiskinan) %>%
+  pull(ipm) %>%
   .[1]
 
 # Ambil data kabupaten/kota
-kemiskinan_kabkota <- data_2024 %>%
+ipm_kabkota <- data_2024 %>%
   filter(!str_detect(tolower(kabupaten_kota), "sulawesi selatan"))
 
 # 3. PERBAIKAN NAMA (TITLE CASE) & STATUS WARNA
-kemiskinan_kabkota <- kemiskinan_kabkota %>%
+ipm_kabkota <- ipm_kabkota %>%
   mutate(
     kabupaten_kota = str_to_title(kabupaten_kota),
     status = case_when(
-      kemiskinan == max(kemiskinan, na.rm = TRUE) ~ "Kemiskinan tertinggi",
-      kemiskinan == min(kemiskinan, na.rm = TRUE) ~ "Kemiskinan terendah",
+      ipm == max(ipm, na.rm = TRUE) ~ "IPM tertinggi",
+      ipm == min(ipm, na.rm = TRUE) ~ "IPM terendah",
       TRUE ~ "Kabupaten/Kota lainnya"
     )
   )
 
 # 4. MENGURUTKAN KABUPATEN/KOTA (TERTINGGI -> TERENDAH)
-kemiskinan_kabkota <- kemiskinan_kabkota %>%
-  arrange(kemiskinan) %>%
+ipm_kabkota <- ipm_kabkota %>%
+  arrange(ipm) %>%
   mutate(
     kabupaten_kota = factor(kabupaten_kota, levels = kabupaten_kota)
   )
 
 # 5. MEMBUAT GRAFIK MAKEOVER
-grafik_kemiskinan <- ggplot(
-  kemiskinan_kabkota,
+grafik_ipm <- ggplot(
+  ipm_kabkota,
   aes(
-    x = kemiskinan,
+    x = ipm,
     y = kabupaten_kota,
     fill = status
   )
 ) +
   geom_col(width = 0.70) +
   geom_text(
-    aes(label = sprintf("%.2f%%", kemiskinan)),
+    aes(label = sprintf("%.2f", ipm)),
     hjust = -0.3,
     size = 3.5,
     color = "gray20"
@@ -70,7 +70,7 @@ grafik_kemiskinan <- ggplot(
     "text",
     x = nilai_provinsi,
     y = 2.5,
-    label = sprintf("Rata-rata Prov. Sulsel (%.2f%%)", nilai_provinsi),
+    label = sprintf("Rata-rata Prov. Sulsel (%.2f)", nilai_provinsi),
     hjust = -0.05,
     vjust = 0,
     size = 3.3,
@@ -79,31 +79,30 @@ grafik_kemiskinan <- ggplot(
   ) +
   scale_fill_manual(
     values = c(
-      "Kemiskinan tertinggi"   = "#1E40AF", # Biru Tua
-      "Kemiskinan terendah"    = "#3B82F6", # Biru Sedang
+      "IPM tertinggi"        = "#1E40AF", # Biru Tua
+      "IPM terendah"         = "#3B82F6", # Biru Sedang
       "Kabupaten/Kota lainnya" = "#94A3B8"  # Biru-Abu Muted
     ),
     breaks = c(
-      "Kemiskinan tertinggi",
-      "Kemiskinan terendah",
+      "IPM tertinggi",
+      "IPM terendah",
       "Kabupaten/Kota lainnya"
     ),
     name = "Indeks Warna"
   ) +
   scale_x_continuous(
-    limits = c(0, max(kemiskinan_kabkota$kemiskinan, na.rm = TRUE) + 2.5),
+    limits = c(0, max(ipm_kabkota$ipm, na.rm = TRUE) + 12),
     expand = expansion(mult = c(0, 0))
   ) +
   labs(
-    title = "Persentase Penduduk Miskin Kabupaten/Kota",
+    title = "Indeks Pembangunan Manusia (IPM) Kabupaten/Kota",
     subtitle = "Sulawesi Selatan, 2024",
-    x = "Persentase penduduk miskin (%)",
+    x = "Indeks Pembangunan Manusia",
     y = NULL,
-    caption = "Sumber: BPS Sulawesi Selatan (Hasil Survei Sosial Ekonomi Nasional / Susenas 2024)\nCatatan: Angka merupakan estimasi berbasis sampel survei. Garis putus-putus menunjukkan rata-rata provinsi."
+    caption = "Sumber: BPS Sulawesi Selatan (Hasil Long Form SP2020 / Sensus Penduduk 2020)\nCatatan: Garis putus-putus menunjukkan rata-rata provinsi."
   ) +
   theme_minimal(base_size = 12) +
   theme(
-    # Legenda ditampilkan di sebelah kanan
     legend.position = "right",
     legend.title = element_text(face = "bold", size = 10),
     legend.text = element_text(size = 9),
@@ -118,11 +117,11 @@ grafik_kemiskinan <- ggplot(
   )
 
 # 6. SIMPAN GAMBAR KE FOLDER KELUARAN
-print(grafik_kemiskinan)
+print(grafik_ipm)
 
 ggsave(
-  "keluaran/after_makeover.png", 
-  plot = grafik_kemiskinan, 
+  "keluaran/after_makeover_ipm.png", 
+  plot = grafik_ipm, 
   width = 9.5, 
   height = 10, 
   dpi = 300
