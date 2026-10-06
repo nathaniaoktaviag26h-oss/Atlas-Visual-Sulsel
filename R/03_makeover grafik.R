@@ -1,6 +1,6 @@
 # ============================================================
 # ATLAS VISUAL SULAWESI SELATAN
-# MAKEOVER GRAFIK IPM (LEGENDA DI SAMPING + JUDUL RINGKAS)
+# MAKEOVER GRAFIK IPM
 # Indikator: Indeks Pembangunan Manusia (IPM)
 # Tahun: 2024
 # ============================================================
@@ -120,7 +120,7 @@ grafik_ipm <- ggplot(
 print(grafik_ipm)
 
 ggsave(
-  "keluaran/after_makeover_ipm.png", 
+  "keluaran/After_Makeover_ipm.png", 
   plot = grafik_ipm, 
   width = 9.5, 
   height = 10, 
