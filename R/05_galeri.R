@@ -411,7 +411,7 @@ grafik_5 <- (gA | gB) / (gC | gD) +
     ),
     theme = theme(
       plot.title = element_text(
-        size = 14,
+        size = 16,
         face = "bold",
         colour = palet_dasar["Aksen"]
       ),
