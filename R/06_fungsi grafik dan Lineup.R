@@ -430,5 +430,6 @@ posisi_asli
 # ============================================================
 
 readRDS(
-  "keluaran/lineup/kunci.rds"
+  "keluaran/kunci_lineup/kunci.rds"
 )
+
