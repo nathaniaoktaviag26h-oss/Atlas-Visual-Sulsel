@@ -1,33 +1,91 @@
 # ============================================================
 # ATLAS VISUAL SULAWESI SELATAN
-# CP3 - BAGIAN 1 & 2
-# FUNGSI GRAFIK + LINEUP
+# CP3 - FUNGSI GRAFIK DAN LINEUP
+# ============================================================
+#
+# Capaian:
+# 45. plot_tren() dengan {{}}
+# 46. plot_scatter() dengan {{}}
+# 47. plot_sebaran() dengan {{}}
+# 48. Lineup 20 panel (1 asli + 19 permutasi)
+# 49. Simpan posisi panel asli ke kunci.rds
+# 50. Simpan lineup-1.png
+#
+# Seed lineup: 123
 # ============================================================
 
 
 # ============================================================
-# 0. PACKAGE DAN THEME
+# 1. PACKAGE
 # ============================================================
 
 library(tidyverse)
 library(nullabor)
 
-# Theme dan palet dari CP2
+
+# ============================================================
+# 2. THEME DAN PALET CP2
+# ============================================================
+
 source("R/04_theme_palet_tim.R")
 
 
 # ============================================================
-# 1. FUNGSI CP3
-#    Minimal 2 fungsi menggunakan {{ }}
+# 3. DATA
+# ============================================================
+
+data_bersih <- readRDS(
+  "data/data-bersih/atlas_sulsel.rds"
+)
+
+
+# ============================================================
+# 4. FUNGSI GRAFIK CP3
 # ============================================================
 
 
 # ------------------------------------------------------------
-# FUNGSI 1
-# Membuat scatterplot dengan nama kolom fleksibel
+# 4.1 FUNGSI PLOT TREN
+#     Menggunakan {{ }} untuk nama kolom indikator
 # ------------------------------------------------------------
 
-grafik_hubungan <- function(data, x, y) {
+plot_tren <- function(data, indikator) {
+  
+  ggplot(
+    data,
+    aes(
+      x = tahun,
+      y = {{ indikator }},
+      group = kabupaten_kota
+    )
+  ) +
+    geom_line(
+      color = "#5B8DB8",
+      linewidth = 0.7,
+      alpha = 0.8
+    ) +
+    geom_point(
+      color = "#163A5C",
+      size = 2
+    ) +
+    scale_x_continuous(
+      breaks = sort(unique(data$tahun))
+    ) +
+    labs(
+      title = "Tren IPM Sulawesi Selatan",
+      x = "Tahun",
+      y = "IPM"
+    ) +
+    theme_tim()
+}
+
+
+# ------------------------------------------------------------
+# 4.2 FUNGSI PLOT SCATTER
+#     Menggunakan {{ }} untuk nama kolom
+# ------------------------------------------------------------
+
+plot_scatter <- function(data, x, y) {
   
   ggplot(
     data,
@@ -37,62 +95,99 @@ grafik_hubungan <- function(data, x, y) {
     )
   ) +
     geom_point(
+      color = "#5B8DB8",
       size = 2.5,
       alpha = 0.85
+    ) +
+    geom_smooth(
+      method = "lm",
+      se = TRUE,
+      linewidth = 0.8,
+      color = "#163A5C",
+      fill = palet_pita,
+      alpha = 0.30
+    ) +
+    labs(
+      title = "Hubungan Kemiskinan dan IPM",
+      x = "Persentase Penduduk Miskin",
+      y = "IPM"
+    ) +
+    theme_tim()
+}
+
+# ------------------------------------------------------------
+# 4.3 FUNGSI PLOT SEBARAN
+#     Fungsi ketiga menggunakan {{ }}
+# ------------------------------------------------------------
+
+plot_sebaran <- function(data, indikator) {
+  
+  ggplot(
+    data,
+    aes(
+      x = {{ indikator }}
+    )
+  ) +
+    geom_histogram(
+      bins = 10,
+      fill = "#5B8DB8",
+      color = "white",
+      alpha = 0.9
+    ) +
+    labs(
+      title = "Sebaran IPM Kabupaten/Kota",
+      x = "IPM",
+      y = "Frekuensi"
     ) +
     theme_tim()
 }
 
 
-# ------------------------------------------------------------
-# FUNGSI 2
-# Membuat ringkasan statistik suatu variabel
-# ------------------------------------------------------------
-
-ringkasan_variabel <- function(data, variabel) {
-  
-  data %>%
-    summarise(
-      mean = mean({{ variabel }}, na.rm = TRUE),
-      median = median({{ variabel }}, na.rm = TRUE),
-      minimum = min({{ variabel }}, na.rm = TRUE),
-      maksimum = max({{ variabel }}, na.rm = TRUE),
-      sd = sd({{ variabel }}, na.rm = TRUE)
-    )
-}
-
-
 # ============================================================
-# 2. DATA
+# 5. UJI FUNGSI
 # ============================================================
 
-data_bersih <- readRDS(
-  "data/data-bersih/atlas_sulsel.rds"
+
+# ------------------------------------------------------------
+# 5.1 Uji plot_tren()
+# ------------------------------------------------------------
+
+grafik_tren <- plot_tren(
+  data_bersih,
+  ipm
 )
 
+print(grafik_tren)
 
-# ============================================================
-# 3. CONTOH PENGGUNAAN FUNGSI
-#    Untuk menunjukkan fungsi dapat menerima nama kolom
-# ============================================================
 
-# Fungsi 1
-cek_grafik_fungsi <- grafik_hubungan(
+# ------------------------------------------------------------
+# 5.2 Uji plot_scatter()
+# ------------------------------------------------------------
+
+grafik_scatter <- plot_scatter(
   data_bersih,
   kemiskinan,
   ipm
 )
 
-# Fungsi 2
-cek_ringkasan <- ringkasan_variabel(
+print(grafik_scatter)
+
+
+# ------------------------------------------------------------
+# 5.3 Uji plot_sebaran()
+# ------------------------------------------------------------
+
+grafik_sebaran <- plot_sebaran(
   data_bersih,
   ipm
 )
 
+print(grafik_sebaran)
+
 
 # ============================================================
-# 4. SIAPKAN DATA LINEUP
-#    Tahun 2024 seperti Grafik 3
+# 6. SIAPKAN DATA LINEUP
+#    Menggunakan data tahun 2024
 # ============================================================
 
 data_lineup <- data_bersih %>%
@@ -109,15 +204,14 @@ data_lineup <- data_bersih %>%
         kabupaten_kota,
         regex("^Kota", ignore_case = TRUE)
       ) ~ "Kota",
-      
       TRUE ~ "Kabupaten"
     )
   )
 
 
 # ============================================================
-# 5. BUAT LINEUP
-#    1 DATA ASLI + 19 DATA NULL
+# 7. BUAT LINEUP 20 PANEL
+#    1 DATA ASLI + 19 DATA PERMUTASI
 # ============================================================
 
 set.seed(123)
@@ -130,7 +224,34 @@ lineup_20 <- lineup(
 
 
 # ============================================================
-# 6. GRAFIK LINEUP
+# 8. SIAPKAN FOLDER OUTPUT
+# ============================================================
+
+dir.create(
+  "keluaran/lineup",
+  recursive = TRUE,
+  showWarnings = FALSE
+)
+
+
+# ============================================================
+# 9. SIMPAN POSISI DATA ASLI
+#    KHUSUS PENELITI
+# ============================================================
+
+posisi_asli <- attr(
+  lineup_20,
+  "pos"
+)
+
+saveRDS(
+  posisi_asli,
+  "keluaran/lineup/kunci.rds"
+)
+
+
+# ============================================================
+# 10. GRAFIK LINEUP
 # ============================================================
 
 grafik_lineup <- ggplot(
@@ -152,12 +273,10 @@ geom_point(
     jenis_wilayah == "Kabupaten"
   ),
   aes(
-    fill = "Kabupaten",
+    color = "Kabupaten",
     shape = "Kabupaten"
   ),
-  color = "#163A5C",
   size = 2.2,
-  stroke = 0.6,
   alpha = 0.85
 ) +
   
@@ -172,17 +291,16 @@ geom_point(
     jenis_wilayah == "Kota"
   ),
   aes(
-    fill = "Kota",
+    color = "Kota",
     shape = "Kota"
   ),
-  color = "#163A5C",
   size = 2.5,
-  alpha = 0.9
+  alpha = 0.90
 ) +
   
   
   # ----------------------------------------------------------
-# GARIS REGRESI
+# GARIS REGRESI DAN CONFIDENCE INTERVAL
 # ----------------------------------------------------------
 
 geom_smooth(
@@ -191,8 +309,7 @@ geom_smooth(
   linewidth = 0.8,
   color = "#163A5C",
   fill = palet_pita,
-  alpha = 0.30,
-  inherit.aes = TRUE
+  alpha = 0.30
 ) +
   
   
@@ -207,10 +324,10 @@ facet_wrap(
   
   
   # ----------------------------------------------------------
-# PALET CP2
+# WARNA JENIS WILAYAH
 # ----------------------------------------------------------
 
-scale_fill_manual(
+scale_color_manual(
   name = "Jenis wilayah",
   values = c(
     "Kabupaten" = "#5B8DB8",
@@ -220,16 +337,16 @@ scale_fill_manual(
   
   
   # ----------------------------------------------------------
-# BENTUK TITIK
-# 21 = lingkaran dengan fill + outline
-# 24 = segitiga dengan fill + outline
+# BENTUK JENIS WILAYAH
+# 16 = lingkaran
+# 17 = segitiga
 # ----------------------------------------------------------
 
 scale_shape_manual(
   name = "Jenis wilayah",
   values = c(
-    "Kabupaten" = 21,
-    "Kota" = 24
+    "Kabupaten" = 16,
+    "Kota" = 17
   )
 ) +
   
@@ -257,12 +374,11 @@ theme_tim() +
   
   
   # ----------------------------------------------------------
-# PERAPIAN PANEL
+# PERAPIAN LINEUP
 # ----------------------------------------------------------
 
 theme(
   
-  # Judul
   plot.title = element_text(
     size = 16,
     face = "bold"
@@ -272,33 +388,28 @@ theme(
     size = 10
   ),
   
-  # Legend
   legend.position = "top",
   
   legend.title = element_text(
     face = "bold"
   ),
   
-  # Nomor panel
   strip.text = element_text(
     size = 10,
     face = "bold"
   ),
   
-  # Garis pembatas setiap panel
   panel.border = element_rect(
     color = "#7A7A7A",
     fill = NA,
     linewidth = 0.7
   ),
   
-  # Jarak antar-panel
   panel.spacing = unit(
     0.7,
     "lines"
   ),
   
-  # Sumbu
   axis.text = element_text(
     size = 8
   ),
@@ -308,24 +419,27 @@ theme(
     face = "bold"
   ),
   
-  # Hilangkan kotak legend
   legend.key = element_blank()
 )
 
 
 # ============================================================
-# 7. TAMPILKAN LINEUP
+# 11. TAMPILKAN LINEUP
 # ============================================================
 
 print(grafik_lineup)
 
 
 # ============================================================
-# 8. SIMPAN LINEUP
+# 12. SIMPAN LINEUP
+# ============================================================
+#
+# Gambar ini yang digunakan untuk observer.
+# Tidak menampilkan posisi data asli.
 # ============================================================
 
 ggsave(
-  filename = "keluaran/lineup_20_panel.png",
+  filename = "keluaran/lineup-20 panel.png",
   plot = grafik_lineup,
   width = 14,
   height = 11,
@@ -333,10 +447,18 @@ ggsave(
   dpi = 300
 )
 
+# ============================================================
+# 13. CEK POSISI DATA ASLI
+#     HANYA UNTUK PENELITI
+# ============================================================
+
+posisi_asli
+
 
 # ============================================================
-# 9. CEK POSISI DATA ASLI
-#    HANYA UNTUK PENELITI
+# 14. CEK KUNCI YANG TERSIMPAN
 # ============================================================
 
-attr(lineup_20, "pos")
+readRDS(
+  "keluaran/lineup/kunci.rds"
+)
