@@ -3,20 +3,67 @@
 # CP3 - BAGIAN 1 & 2
 # FUNGSI GRAFIK + LINEUP
 # ============================================================
+
+
 # ============================================================
-# CP3 - LINEUP 20 PANEL
-# Mengikuti Grafik 3
+# 0. PACKAGE DAN THEME
 # ============================================================
 
 library(tidyverse)
 library(nullabor)
 
-# Theme dari CP2
+# Theme dan palet dari CP2
 source("R/04_theme_palet_tim.R")
 
 
 # ============================================================
-# 1. DATA
+# 1. FUNGSI CP3
+#    Minimal 2 fungsi menggunakan {{ }}
+# ============================================================
+
+
+# ------------------------------------------------------------
+# FUNGSI 1
+# Membuat scatterplot dengan nama kolom fleksibel
+# ------------------------------------------------------------
+
+grafik_hubungan <- function(data, x, y) {
+  
+  ggplot(
+    data,
+    aes(
+      x = {{ x }},
+      y = {{ y }}
+    )
+  ) +
+    geom_point(
+      size = 2.5,
+      alpha = 0.85
+    ) +
+    theme_tim()
+}
+
+
+# ------------------------------------------------------------
+# FUNGSI 2
+# Membuat ringkasan statistik suatu variabel
+# ------------------------------------------------------------
+
+ringkasan_variabel <- function(data, variabel) {
+  
+  data %>%
+    summarise(
+      mean = mean({{ variabel }}, na.rm = TRUE),
+      median = median({{ variabel }}, na.rm = TRUE),
+      minimum = min({{ variabel }}, na.rm = TRUE),
+      maksimum = max({{ variabel }}, na.rm = TRUE),
+      sd = sd({{ variabel }}, na.rm = TRUE)
+    )
+}
+
+
+# ============================================================
+# 2. DATA
 # ============================================================
 
 data_bersih <- readRDS(
@@ -25,7 +72,26 @@ data_bersih <- readRDS(
 
 
 # ============================================================
-# 2. SIAPKAN DATA LINEUP
+# 3. CONTOH PENGGUNAAN FUNGSI
+#    Untuk menunjukkan fungsi dapat menerima nama kolom
+# ============================================================
+
+# Fungsi 1
+cek_grafik_fungsi <- grafik_hubungan(
+  data_bersih,
+  kemiskinan,
+  ipm
+)
+
+# Fungsi 2
+cek_ringkasan <- ringkasan_variabel(
+  data_bersih,
+  ipm
+)
+
+
+# ============================================================
+# 4. SIAPKAN DATA LINEUP
 #    Tahun 2024 seperti Grafik 3
 # ============================================================
 
@@ -50,7 +116,7 @@ data_lineup <- data_bersih %>%
 
 
 # ============================================================
-# 3. BUAT LINEUP
+# 5. BUAT LINEUP
 #    1 DATA ASLI + 19 DATA NULL
 # ============================================================
 
@@ -64,7 +130,7 @@ lineup_20 <- lineup(
 
 
 # ============================================================
-# 4. GRAFIK LINEUP
+# 6. GRAFIK LINEUP
 # ============================================================
 
 grafik_lineup <- ggplot(
@@ -74,6 +140,7 @@ grafik_lineup <- ggplot(
     y = ipm
   )
 ) +
+  
   
   # ----------------------------------------------------------
 # TITIK KABUPATEN
@@ -85,12 +152,15 @@ geom_point(
     jenis_wilayah == "Kabupaten"
   ),
   aes(
-    color = "Kabupaten",
+    fill = "Kabupaten",
     shape = "Kabupaten"
   ),
+  color = "#163A5C",
   size = 2.2,
+  stroke = 0.6,
   alpha = 0.85
 ) +
+  
   
   # ----------------------------------------------------------
 # TITIK KOTA
@@ -102,12 +172,14 @@ geom_point(
     jenis_wilayah == "Kota"
   ),
   aes(
-    color = "Kota",
+    fill = "Kota",
     shape = "Kota"
   ),
+  color = "#163A5C",
   size = 2.5,
   alpha = 0.9
 ) +
+  
   
   # ----------------------------------------------------------
 # GARIS REGRESI
@@ -119,8 +191,10 @@ geom_smooth(
   linewidth = 0.8,
   color = "#163A5C",
   fill = palet_pita,
+  alpha = 0.30,
   inherit.aes = TRUE
 ) +
+  
   
   # ----------------------------------------------------------
 # 20 PANEL
@@ -131,11 +205,12 @@ facet_wrap(
   ncol = 5
 ) +
   
-# ----------------------------------------------------------
+  
+  # ----------------------------------------------------------
 # PALET CP2
 # ----------------------------------------------------------
 
-scale_color_manual(
+scale_fill_manual(
   name = "Jenis wilayah",
   values = c(
     "Kabupaten" = "#5B8DB8",
@@ -143,13 +218,21 @@ scale_color_manual(
   )
 ) +
   
-  scale_shape_manual(
-    name = "Jenis wilayah",
-    values = c(
-      "Kabupaten" = 16,
-      "Kota" = 17
-    )
-  ) +
+  
+  # ----------------------------------------------------------
+# BENTUK TITIK
+# 21 = lingkaran dengan fill + outline
+# 24 = segitiga dengan fill + outline
+# ----------------------------------------------------------
+
+scale_shape_manual(
+  name = "Jenis wilayah",
+  values = c(
+    "Kabupaten" = 21,
+    "Kota" = 24
+  )
+) +
+  
   
   # ----------------------------------------------------------
 # LABEL
@@ -165,11 +248,13 @@ labs(
   y = "IPM"
 ) +
   
+  
   # ----------------------------------------------------------
 # THEME CP2
 # ----------------------------------------------------------
 
 theme_tim() +
+  
   
   # ----------------------------------------------------------
 # PERAPIAN PANEL
@@ -200,7 +285,7 @@ theme(
     face = "bold"
   ),
   
-  # GARIS PEMBATAS SETIAP PANEL
+  # Garis pembatas setiap panel
   panel.border = element_rect(
     color = "#7A7A7A",
     fill = NA,
@@ -221,19 +306,22 @@ theme(
   axis.title = element_text(
     size = 10,
     face = "bold"
-  )
+  ),
+  
+  # Hilangkan kotak legend
+  legend.key = element_blank()
 )
 
 
 # ============================================================
-# 5. TAMPILKAN
+# 7. TAMPILKAN LINEUP
 # ============================================================
 
 print(grafik_lineup)
 
 
 # ============================================================
-# 6. SIMPAN
+# 8. SIMPAN LINEUP
 # ============================================================
 
 ggsave(
@@ -244,4 +332,11 @@ ggsave(
   units = "in",
   dpi = 300
 )
+
+
+# ============================================================
+# 9. CEK POSISI DATA ASLI
+#    HANYA UNTUK PENELITI
+# ============================================================
+
 attr(lineup_20, "pos")
