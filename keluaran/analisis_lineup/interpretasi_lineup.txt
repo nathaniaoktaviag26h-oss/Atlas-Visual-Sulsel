@@ -1,0 +1,1 @@
+Dari 10 pengamat, sebanyak 6 pengamat berhasil mengidentifikasi panel data asli. Pada lineup dengan 20 panel, peluang memilih panel asli secara acak adalah 1/20. Visual p-value sebesar 2.755e-06. Karena p-value < 0,05, terdapat bukti bahwa panel data asli dapat dibedakan dari panel hasil permutasi lebih baik daripada yang diharapkan secara acak.

@@ -1,0 +1,10 @@
+1. Alasannya, panel 10 adalah satu-satunya yang garis regresinya menurun tajam. IPM turun dari sekitar 77 ke 71 seiring naiknya persentase penduduk miskin, dan pita kepercayaannya relatif sempit sehingga kemiringannya tampak jelas. Hal ini juga didukung oleh posisi segitiga (Kota) yang semuanya berada di bagian atas kiri, dengan IPM tinggi dan kemiskinan rendah.
+2. karena memiliki tren yang paling berbeda
+3. Negatif
+4. Alasan saya memilih panel 15, karena memiliki pola hubungan negatif yang paling kuat, ditunjukkan oleh garis regresi yang menurun tajam dibandingkan panel lainnya.
+5. Panel nomor 10 paling berbeda karena garis trennya menurun paling tajam, menunjukkan bahwa semakin tinggi persentase penduduk miskin, semakin rendah IPM, sedangkan panel lain umumnya memiliki tren lebih datar atau meningkat.
+6. Dapat dilihat dari gambar yang ada, panel 10 memiliki kemiringan garis tren yang paling berbeda dibandingkan panel lainnya.
+7. Karna memiliki garis yang tidak simetris dengan yang lain
+8. tren turun yang lumayan tajam dibanding panel yg lain
+9. Panel 10, karena memiliki garis tren menurun paling tajam dibandingkan panel lainnya.
+10. Pada Panel 1, garis tren menanjak cukup tajam ke kanan (korelasi positif antara Persentase Penduduk Miskin dan IPM)

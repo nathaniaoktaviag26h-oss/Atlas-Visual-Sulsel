@@ -1,0 +1,15 @@
+Timestamp,Nama Pengamat,Asal Tim Pengamat,"Penel nomor berapa yang paling berbeda dari yang lain? 
+
+(Jika ragu, pilih yang paling Anda curigai)
+
+gambar grafik secara detail",Apa alasan Anda memilih panel tersebut sebagai panel yang paling berbeda dari yang lain?,pilihan_panel,benar
+10/8/2026 18:40:39,Sasa Arisa,Tim 4,Panel 10,"Alasannya, panel 10 adalah satu-satunya yang garis regresinya menurun tajam. IPM turun dari sekitar 77 ke 71 seiring naiknya persentase penduduk miskin, dan pita kepercayaannya relatif sempit sehingga kemiringannya tampak jelas. Hal ini juga didukung oleh posisi segitiga (Kota) yang semuanya berada di bagian atas kiri, dengan IPM tinggi dan kemiskinan rendah.",10,TRUE
+10/8/2026 18:59:46,asmaul husna,Tim 6,Panel 15,karena memiliki tren yang paling berbeda,15,FALSE
+10/8/2026 19:24:25,A. Muh. Faldi Fadhil A. Darsyad,Tim 7,Panel 10,Negatif,10,TRUE
+10/8/2026 19:27:48,Ilfani Magfirli,Tim 5,Panel 15,"Alasan saya memilih panel 15, karena memiliki pola hubungan negatif yang paling kuat, ditunjukkan oleh garis regresi yang menurun tajam dibandingkan panel lainnya.",15,FALSE
+10/8/2026 19:30:47,wafiq chairani,Tim 6,Panel 10,"Panel nomor 10 paling berbeda karena garis trennya menurun paling tajam, menunjukkan bahwa semakin tinggi persentase penduduk miskin, semakin rendah IPM, sedangkan panel lain umumnya memiliki tren lebih datar atau meningkat.",10,TRUE
+10/8/2026 19:30:59,Nabila,Tim 2,Panel 10,"Dapat dilihat dari gambar yang ada, panel 10 memiliki kemiringan garis tren yang paling berbeda dibandingkan panel lainnya.",10,TRUE
+10/8/2026 19:34:33,Riski aprilianti,Tim 7,Panel 2,Karna memiliki garis yang tidak simetris dengan yang lain,2,FALSE
+10/8/2026 19:39:30,madanih,Tim 3,Panel 10,tren turun yang lumayan tajam dibanding panel yg lain,10,TRUE
+10/8/2026 19:52:27,Rizka,Tim 5,Panel 10,"Panel 10, karena memiliki garis tren menurun paling tajam dibandingkan panel lainnya.",10,TRUE
+10/8/2026 19:54:59,Suhartin,Tim 3,Panel 1,"Pada Panel 1, garis tren menanjak cukup tajam ke kanan (korelasi positif antara Persentase Penduduk Miskin dan IPM)",1,FALSE
