@@ -3,6 +3,7 @@
 # 02 - MENYIAPKAN DATA BATAS WILAYAH DAN PETA
 # ============================================================
 
+
 # ------------------------------------------------------------
 # 1A. PACKAGE
 # ------------------------------------------------------------
@@ -50,7 +51,6 @@ kode_wilayah <- kode_wilayah %>%
     kode_wilayah
   )
 
-
 # ------------------------------------------------------------
 # 3. MEMBACA BATAS WILAYAH
 # ------------------------------------------------------------
@@ -59,7 +59,6 @@ peta <- st_read(
   "data/data-batas-peta/geoBoundaries-IDN-ADM2_simplified.geojson",
   quiet = FALSE
 )
-
 
 # ------------------------------------------------------------
 # 4. MEMILIH 24 KABUPATEN/KOTA SULAWESI SELATAN
@@ -82,7 +81,6 @@ peta_sulsel <- peta %>%
   filter(
     nama_peta %in% wilayah_sulsel
   )
-
 
 # ------------------------------------------------------------
 # 5. MENGHUBUNGKAN KODE WILAYAH DENGAN PETA
@@ -122,7 +120,6 @@ cat(
   "Validasi berhasil: 24 wilayah dan seluruh kode tersedia.\n"
 )
 
-
 # ------------------------------------------------------------
 # 7. DATA IPM TAHUN 2022-2024
 # ------------------------------------------------------------
@@ -138,7 +135,6 @@ stopifnot(
   nrow(peta_ipm_semua) == 72,
   sum(is.na(peta_ipm_semua$ipm)) == 0
 )
-
 
 # ------------------------------------------------------------
 # 8. PALET DAN KATEGORI RENTANG IPM
@@ -174,13 +170,10 @@ label_ipm_cb <- paste0(
   )
 )
 
-# Lima warna biru dengan kontras yang lebih kuat
-palet_ipm_cb <- c(
-  "#08306B",
-  "#08519C",
-  "#2171B5",
-  "#4292C6",
-  "#9ECAE1"
+# Palet warna IPM
+palet_ipm_cb <- colorspace::sequential_hcl(
+  5,
+  palette = "Blues 3"
 )
 
 # ------------------------------------------------------------
@@ -246,7 +239,6 @@ peta_ipm <- ggplot(data_ipm_semua_kategori) +
   coord_sf(datum = NA)
 
 print(peta_ipm)
-
 
 # ------------------------------------------------------------
 # 10. PETA KATEGORI IPM 2024 DAN SIMULASI BUTA WARNA
@@ -339,7 +331,6 @@ peta_ipm_2024_protan <- buat_peta_ipm_cb(
   "Protanopia (simulasi)"
 )
 
-
 # ------------------------------------------------------------
 # 11. GABUNGKAN TIGA PETA SECARA HORIZONTAL
 # ------------------------------------------------------------
@@ -415,7 +406,6 @@ stopifnot(
   sum(is.na(peta_kemiskinan_semua$kemiskinan)) == 0
 )
 
-
 # ------------------------------------------------------------
 # 14. KATEGORI RENTANG KEMISKINAN
 # ------------------------------------------------------------
@@ -461,8 +451,6 @@ palet_kemiskinan <- colorspace::sequential_hcl(
   length(label_kemiskinan),
   palette = "Oranges"
 )
-
-
 
 # ------------------------------------------------------------
 # 15. PETA KATEGORI KEMISKINAN 2022-2024
@@ -526,15 +514,12 @@ peta_kemiskinan <- ggplot(data_kemiskinan_kategori) +
 
 print(peta_kemiskinan)
 
-
 # ------------------------------------------------------------
 # 16. DATA KEMISKINAN TAHUN 2024
 # ------------------------------------------------------------
 
 data_kemiskinan_2024 <- peta_kemiskinan_semua %>%
   filter(tahun == 2024)
-
-
 
 # ------------------------------------------------------------
 # 17. FUNGSI PETA UJI BUTA WARNA KEMISKINAN
@@ -625,8 +610,6 @@ peta_kemiskinan_protan <- buat_peta_kemiskinan_cb(
   colorspace::protan(palet_kemiskinan),
   "Protanopia (simulasi)"
 )
-
-
 
 # ------------------------------------------------------------
 # 19. MENGGABUNGKAN PETA UJI AKSESIBILITAS WARNA KEMISKINAN
