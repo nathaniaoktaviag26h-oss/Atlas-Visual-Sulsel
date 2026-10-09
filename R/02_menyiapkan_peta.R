@@ -3,7 +3,6 @@
 # 02 - MENYIAPKAN DATA BATAS WILAYAH DAN PETA
 # ============================================================
 
-
 # ------------------------------------------------------------
 # 1A. PACKAGE
 # ------------------------------------------------------------
@@ -13,6 +12,11 @@ library(dplyr)
 library(ggplot2)
 library(stringr)
 library(colorspace)
+library(patchwork)
+
+# Theme dan palet visual tim
+
+source("R/04_theme_palet_tim.R")
 
 # ------------------------------------------------------------
 # 1B. MEMBACA DATA BERSIH
@@ -108,357 +112,586 @@ cat(
   "\n"
 )
 
-
-# ------------------------------------------------------------
-# 7. DATA IPM TAHUN 2024
-# ------------------------------------------------------------
-
-data_ipm_2024 <- data_bersih %>%
-  filter(
-    tahun == 2024
-  ) %>%
-  select(
-    kode_wilayah,
-    kabupaten_kota,
-    ipm
-  )
-
-# ------------------------------------------------------------
-# 8. MENGGABUNGKAN IPM DENGAN PETA
-# ------------------------------------------------------------
-
-peta_ipm_2024 <- peta_sulsel %>%
-  left_join(
-    data_ipm_2024,
-    by = "kode_wilayah"
-  )
-
-# ------------------------------------------------------------
-# 9. CEK DATA IPM
-# ------------------------------------------------------------
-
-cat(
-  "Jumlah wilayah dengan data IPM:",
-  nrow(peta_ipm_2024),
-  "\n"
+# Validasi 
+stopifnot(
+  nrow(peta_sulsel) == 24,
+  sum(is.na(peta_sulsel$kode_wilayah)) == 0
 )
 
 cat(
-  "Jumlah IPM yang NA:",
-  sum(is.na(peta_ipm_2024$ipm)),
-  "\n"
+  "Validasi berhasil: 24 wilayah dan seluruh kode tersedia.\n"
+)
+
+
+# ------------------------------------------------------------
+# 7. DATA IPM TAHUN 2022-2024
+# ------------------------------------------------------------
+
+data_ipm <- data_bersih %>%
+  filter(tahun %in% 2022:2024) %>%
+  select(kode_wilayah, tahun, ipm)
+
+peta_ipm_semua <- peta_sulsel %>%
+  left_join(data_ipm, by = "kode_wilayah")
+
+stopifnot(
+  nrow(peta_ipm_semua) == 72,
+  sum(is.na(peta_ipm_semua$ipm)) == 0
+)
+
+
+# ------------------------------------------------------------
+# 8. PALET DAN KATEGORI RENTANG IPM
+# ------------------------------------------------------------
+
+# Batas kategori setiap 5 poin IPM
+batas_ipm_cb <- seq(
+  floor(min(data_ipm$ipm, na.rm = TRUE) / 5) * 5,
+  ceiling(max(data_ipm$ipm, na.rm = TRUE) / 5) * 5,
+  by = 5
+)
+
+# Pastikan batas mencakup semua nilai IPM
+if (length(batas_ipm_cb) < 2) {
+  batas_ipm_cb <- c(
+    floor(min(data_ipm$ipm, na.rm = TRUE)),
+    ceiling(max(data_ipm$ipm, na.rm = TRUE)) + 1
+  )
+}
+
+# Label rentang dengan format desimal Indonesia
+label_ipm_cb <- paste0(
+  format(
+    head(batas_ipm_cb, -1),
+    nsmall = 2,
+    decimal.mark = ","
+  ),
+  "–",
+  format(
+    tail(batas_ipm_cb, -1),
+    nsmall = 2,
+    decimal.mark = ","
+  )
+)
+
+# Lima warna biru dengan kontras yang lebih kuat
+palet_ipm_cb <- c(
+  "#08306B",
+  "#08519C",
+  "#2171B5",
+  "#4292C6",
+  "#9ECAE1"
 )
 
 # ------------------------------------------------------------
-# 10. PALET WARNA
+# 9. PETA KATEGORI IPM 2022-2024
 # ------------------------------------------------------------
 
-palet_ipm <- sequential_hcl(
-  5,
-  palette = "Blues 3"
-)
+# Buat kategori IPM dengan batas yang sama untuk semua tahun
+data_ipm_semua_kategori <- peta_ipm_semua %>%
+  mutate(
+    kategori_ipm_cb = cut(
+      ipm,
+      breaks = batas_ipm_cb,
+      labels = label_ipm_cb,
+      include.lowest = TRUE,
+      right = TRUE
+    )
+  )
 
-# ------------------------------------------------------------
-# 11. CHOROPLETH IPM 2024
-# ------------------------------------------------------------
-
-peta_ipm <- ggplot(
-  peta_ipm_2024
-) +
+peta_ipm <- ggplot(data_ipm_semua_kategori) +
   geom_sf(
-    aes(fill = ipm),
+    aes(fill = kategori_ipm_cb),
     color = "white",
     linewidth = 0.3
   ) +
-  scale_fill_gradientn(
-    colors = palet_ipm,
-    name = "IPM"
+  facet_wrap(~tahun, nrow = 1) +
+  scale_fill_manual(
+    values = palet_ipm_cb,
+    drop = FALSE,
+    name = "Rentang IPM"
   ) +
   labs(
-    title = "Indeks Pembangunan Manusia Sulawesi Selatan, 2024",
-    subtitle = "Nilai IPM menurut kabupaten/kota",
+    title = "Perkembangan IPM Sulawesi Selatan",
+    subtitle = "Kabupaten/kota | 2022–2024",
     caption = "Sumber: BPS Provinsi Sulawesi Selatan"
   ) +
-  theme_void() +
+  theme_tim() +
   theme(
+    axis.text = element_blank(),
+    axis.title = element_blank(),
+    axis.ticks = element_blank(),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.background = element_blank(),
+    strip.background = element_blank(),
+    strip.text = element_text(
+      face = "bold",
+      size = 12,
+      color = "black"
+    ),
+    legend.position = "right",
+    legend.title = element_text(
+      face = "bold",
+      size = 10
+    ),
+    legend.text = element_text(size = 9),
     plot.title = element_text(
       face = "bold",
-      size = 14
+      size = 15
     ),
-    plot.subtitle = element_text(
-      size = 11
-    ),
-    legend.position = "right"
-  )
-
-
-# Menampilkan peta
-peta_ipm
-
-# ------------------------------------------------------------
-# 12A. UJI COLORBLIND
-# ------------------------------------------------------------
-
-deutan_palet <- deutan(
-  palet_ipm
-)
-
-protan_palet <- protan(
-  palet_ipm
-)
-
-cat("\nPalet asli:\n")
-print(palet_ipm)
-
-cat("\nSimulasi deuteranopia:\n")
-print(deutan_palet)
-
-cat("\nSimulasi protanopia:\n")
-print(protan_palet)
-
-# ------------------------------------------------------------
-# 12B. VISUALISASI UJI COLORBLIND
-# ------------------------------------------------------------
-
-peta_deutan <- ggplot(peta_ipm_2024) +
-  geom_sf(
-    aes(fill = ipm),
-    color = "white",
-    linewidth = 0.3
+    plot.subtitle = element_text(size = 10),
+    plot.caption = element_text(size = 8)
   ) +
-  scale_fill_gradientn(
-    colors = deutan_palet,
-    name = "IPM"
-  ) +
-  labs(
-    title = "Simulasi Deuteranopia",
-    subtitle = "Peta IPM Sulawesi Selatan 2024"
-  ) +
-  theme_void()
+  coord_sf(datum = NA)
 
+print(peta_ipm)
 
-peta_protan <- ggplot(peta_ipm_2024) +
-  geom_sf(
-    aes(fill = ipm),
-    color = "white",
-    linewidth = 0.3
-  ) +
-  scale_fill_gradientn(
-    colors = protan_palet,
-    name = "IPM"
-  ) +
-  labs(
-    title = "Simulasi Protanopia",
-    subtitle = "Peta IPM Sulawesi Selatan 2024"
-  ) +
-  theme_void()
-
-
-# Menampilkan hasil simulasi
-peta_deutan
-peta_protan
 
 # ------------------------------------------------------------
-# 13. SIMPAN CHOROPLETH
+# 10. PETA KATEGORI IPM 2024 DAN SIMULASI BUTA WARNA
 # ------------------------------------------------------------
 
-ggsave(
-  filename = "keluaran/peta_ipm_2024.png",
-  plot = peta_ipm,
-  width = 8,
-  height = 6,
-  dpi = 300
+# Ambil data IPM tahun 2024 saja
+data_ipm_2024 <- peta_ipm_semua %>%
+  filter(tahun == 2024)
+
+# Fungsi untuk membuat peta dengan palet tertentu
+buat_peta_ipm_cb <- function(data, warna, judul) {
+  
+  data <- data %>%
+    mutate(
+      kategori_ipm_cb = cut(
+        ipm,
+        breaks = batas_ipm_cb,
+        labels = label_ipm_cb,
+        include.lowest = TRUE,
+        right = TRUE
+      )
+    )
+  ggplot(data) +
+    geom_sf(
+      aes(fill = kategori_ipm_cb),
+      color = "white",
+      linewidth = 0.3
+    ) +
+    scale_fill_manual(
+      values = warna,
+      drop = FALSE,
+      name = "Rentang IPM"
+    ) +
+    labs(
+      title = judul,
+      caption = "Sumber: BPS Provinsi Sulawesi Selatan"
+    ) +
+    theme_tim() +
+    theme(
+      axis.text = element_blank(),
+      axis.title = element_blank(),
+      axis.ticks = element_blank(),
+      panel.grid = element_blank(),
+      panel.background = element_rect(
+        fill = "white",
+        color = NA
+      ),
+      plot.background = element_rect(
+        fill = "white",
+        color = NA
+      ),
+      plot.title = element_text(
+        face = "bold",
+        size = 11
+      ),
+      legend.title = element_text(
+        face = "bold",
+        size = 9
+      ),
+      legend.text = element_text(size = 8),
+      legend.position = "right",
+      legend.direction = "vertical",
+      legend.key.size = grid::unit(4, "mm"),
+      plot.margin = margin(2, 2, 2, 2)
+    ) +
+    coord_sf(
+      datum = NA,
+      expand = FALSE
+    )
+}
+
+# Peta warna asli
+peta_ipm_2024 <- buat_peta_ipm_cb(
+  data_ipm_2024,
+  palet_ipm_cb,
+  "Penglihatan normal"
 )
 
-# ------------------------------------------------------------
-# 14. SIMPAN HASIL UJI COLORBLIND
-# ------------------------------------------------------------
-
-ggsave(
-  filename = "keluaran/peta_ipm_2024_deuteranopia.png",
-  plot = peta_deutan,
-  width = 8,
-  height = 6,
-  dpi = 300
+# Simulasi deuteranopia
+peta_ipm_2024_deutan <- buat_peta_ipm_cb(
+  data_ipm_2024,
+  colorspace::deutan(palet_ipm_cb),
+  "Deuteranopia (simulasi)"
 )
 
-ggsave(
-  filename = "keluaran/peta_ipm_2024_protanopia.png",
-  plot = peta_protan,
-  width = 8,
-  height = 6,
-  dpi = 300
+# Simulasi protanopia
+peta_ipm_2024_protan <- buat_peta_ipm_cb(
+  data_ipm_2024,
+  colorspace::protan(palet_ipm_cb),
+  "Protanopia (simulasi)"
 )
 
-# ------------------------------------------------------------
-# 15. DATA KEMISKINAN TAHUN 2024
-# ------------------------------------------------------------
-
-data_kemiskinan_2024 <- data_bersih %>%
-  filter(tahun == 2024) %>%
-  select(
-    kode_wilayah,
-    kabupaten_kota,
-    kemiskinan
-  )
 
 # ------------------------------------------------------------
-# 16. MENGGABUNGKAN KEMISKINAN DENGAN PETA
+# 11. GABUNGKAN TIGA PETA SECARA HORIZONTAL
 # ------------------------------------------------------------
 
-peta_kemiskinan_2024 <- peta_sulsel %>%
-  left_join(
-    data_kemiskinan_2024,
-    by = "kode_wilayah"
-  )
-
-# ------------------------------------------------------------
-# 17. CEK DATA KEMISKINAN
-# ------------------------------------------------------------
-
-cat(
-  "Jumlah wilayah dengan data kemiskinan:",
-  nrow(peta_kemiskinan_2024),
-  "\n"
-)
-
-cat(
-  "Jumlah kemiskinan yang NA:",
-  sum(is.na(peta_kemiskinan_2024$kemiskinan)),
-  "\n"
-)
-
-# ------------------------------------------------------------
-# 18. PALET WARNA KEMISKINAN
-# ------------------------------------------------------------
-
-palet_kemiskinan <- sequential_hcl(
-  5,
-  palette = "Blues 3"
-)
-
-# ------------------------------------------------------------
-# 19. CHOROPLETH KEMISKINAN 2024
-# ------------------------------------------------------------
-
-peta_kemiskinan <- ggplot(
-  peta_kemiskinan_2024
+peta_ipm_colorblind_2024 <- (
+  peta_ipm_2024 |
+    peta_ipm_2024_deutan |
+    peta_ipm_2024_protan
 ) +
+  patchwork::plot_layout(
+    ncol = 3,
+    guides = "keep"
+  ) +
+  patchwork::plot_annotation(
+    title = "Uji Aksesibilitas Warna — IPM Sulawesi Selatan 2024",
+    subtitle = paste(
+      "Perbandingan warna asli, deuteranopia,",
+      "dan protanopia"
+    ),
+    theme = theme(
+      plot.title = element_text(
+        face = "bold",
+        size = 16
+      ),
+      plot.subtitle = element_text(size = 11)
+    )
+  )
+
+print(peta_ipm_colorblind_2024)
+
+# ------------------------------------------------------------
+# 12. SIMPAN PETA IPM
+# ------------------------------------------------------------
+
+# Peta utama tiga tahun
+ggsave(
+  "keluaran/peta_ipm_2022_2024.png",
+  peta_ipm,
+  width = 13,
+  height = 7,
+  dpi = 300,
+  bg = "white"
+)
+
+# Peta uji aksesibilitas warna khusus tahun 2024
+ggsave(
+  "keluaran/peta_ipm_colorblind_2024.png",
+  peta_ipm_colorblind_2024,
+  width = 18,
+  height = 8,
+  units = "in",
+  dpi = 300,
+  bg = "white"
+)
+
+cat(
+  "Peta IPM 2022-2024 dan uji aksesibilitas warna IPM 2024 selesai.\n"
+)
+
+# ------------------------------------------------------------
+# 13. Data kemiskinan 2022-2024
+# ------------------------------------------------------------
+
+data_kemiskinan <- data_bersih %>%
+  filter(tahun %in% 2022:2024) %>%
+  select(kode_wilayah, tahun, kemiskinan)
+
+peta_kemiskinan_semua <- peta_sulsel %>%
+  left_join(data_kemiskinan, by = "kode_wilayah")
+
+stopifnot(
+  nrow(peta_kemiskinan_semua) == 72,
+  sum(is.na(peta_kemiskinan_semua$kemiskinan)) == 0
+)
+
+
+# ------------------------------------------------------------
+# 14. KATEGORI RENTANG KEMISKINAN
+# ------------------------------------------------------------
+
+rentang_kemiskinan <- range(
+  data_kemiskinan$kemiskinan,
+  na.rm = TRUE
+)
+
+batas_kemiskinan <- pretty(
+  rentang_kemiskinan,
+  n = 5
+)
+
+batas_kemiskinan <- sort(unique(batas_kemiskinan))
+
+batas_kemiskinan[1] <- min(
+  batas_kemiskinan[1],
+  rentang_kemiskinan[1]
+)
+
+batas_kemiskinan[length(batas_kemiskinan)] <- max(
+  batas_kemiskinan[length(batas_kemiskinan)],
+  rentang_kemiskinan[2]
+)
+
+label_kemiskinan <- paste0(
+  format(
+    head(batas_kemiskinan, -1),
+    nsmall = 2,
+    decimal.mark = ","
+  ),
+  "–",
+  format(
+    tail(batas_kemiskinan, -1),
+    nsmall = 2,
+    decimal.mark = ","
+  )
+)
+
+# Palet oranye dengan kontras jelas
+palet_kemiskinan <- colorspace::sequential_hcl(
+  length(label_kemiskinan),
+  palette = "Oranges"
+)
+
+
+
+# ------------------------------------------------------------
+# 15. PETA KATEGORI KEMISKINAN 2022-2024
+# ------------------------------------------------------------
+
+data_kemiskinan_kategori <- peta_kemiskinan_semua %>%
+  mutate(
+    kategori_kemiskinan = cut(
+      kemiskinan,
+      breaks = batas_kemiskinan,
+      labels = label_kemiskinan,
+      include.lowest = TRUE,
+      right = TRUE
+    )
+  )
+
+peta_kemiskinan <- ggplot(data_kemiskinan_kategori) +
   geom_sf(
-    aes(fill = kemiskinan),
+    aes(fill = kategori_kemiskinan),
     color = "white",
     linewidth = 0.3
   ) +
-  scale_fill_gradientn(
-    colors = palet_kemiskinan,
+  facet_wrap(~tahun, nrow = 1) +
+  scale_fill_manual(
+    values = palet_kemiskinan,
+    drop = FALSE,
     name = "Kemiskinan (%)"
   ) +
   labs(
-    title = "Persentase Penduduk Miskin Sulawesi Selatan, 2024",
-    subtitle = "Persentase penduduk miskin menurut kabupaten/kota",
+    title = "Perkembangan Kemiskinan Sulawesi Selatan",
+    subtitle = "Persentase penduduk miskin | 2022–2024",
     caption = "Sumber: BPS Provinsi Sulawesi Selatan"
   ) +
-  theme_void() +
+  theme_tim() +
   theme(
+    axis.text = element_blank(),
+    axis.title = element_blank(),
+    axis.ticks = element_blank(),
+    panel.grid = element_blank(),
+    panel.background = element_blank(),
+    strip.background = element_blank(),
+    strip.text = element_text(
+      face = "bold",
+      size = 12,
+      color = "black"
+    ),
+    legend.position = "right",
+    legend.title = element_text(
+      face = "bold",
+      size = 10
+    ),
+    legend.text = element_text(size = 9),
     plot.title = element_text(
       face = "bold",
-      size = 14
+      size = 15
     ),
-    plot.subtitle = element_text(
-      size = 11
-    ),
-    legend.position = "right"
+    plot.subtitle = element_text(size = 10),
+    plot.caption = element_text(size = 8)
+  ) +
+  coord_sf(datum = NA)
+
+print(peta_kemiskinan)
+
+
+# ------------------------------------------------------------
+# 16. DATA KEMISKINAN TAHUN 2024
+# ------------------------------------------------------------
+
+data_kemiskinan_2024 <- peta_kemiskinan_semua %>%
+  filter(tahun == 2024)
+
+
+
+# ------------------------------------------------------------
+# 17. FUNGSI PETA UJI BUTA WARNA KEMISKINAN
+# ------------------------------------------------------------
+
+buat_peta_kemiskinan_cb <- function(data, warna, judul) {
+  
+  data <- data %>%
+    mutate(
+      kategori_kemiskinan = cut(
+        kemiskinan,
+        breaks = batas_kemiskinan,
+        labels = label_kemiskinan,
+        include.lowest = TRUE,
+        right = TRUE
+      )
+    )
+  
+  ggplot(data) +
+    geom_sf(
+      aes(fill = kategori_kemiskinan),
+      color = "white",
+      linewidth = 0.3
+    ) +
+    scale_fill_manual(
+      values = warna,
+      drop = FALSE,
+      name = "Kemiskinan (%)"
+    ) +
+    labs(
+      title = judul,
+      caption = "Sumber: BPS Provinsi Sulawesi Selatan"
+    ) +
+    theme_tim() +
+    theme(
+      axis.text = element_blank(),
+      axis.title = element_blank(),
+      axis.ticks = element_blank(),
+      panel.grid = element_blank(),
+      
+      panel.background = element_rect(
+        fill = "white",
+        color = NA
+      ),
+      plot.background = element_rect(
+        fill = "white",
+        color = NA
+      ),
+      
+      plot.title = element_text(
+        face = "bold",
+        size = 11
+      ),
+      legend.title = element_text(
+        face = "bold",
+        size = 9
+      ),
+      legend.text = element_text(size = 8),
+      legend.position = "right",
+      legend.direction = "vertical",
+      legend.key.size = grid::unit(4, "mm"),
+      plot.margin = margin(2, 2, 2, 2)
+    ) +
+    coord_sf(
+      datum = NA,
+      expand = FALSE
+    )
+}
+
+# ------------------------------------------------------------
+# 18. SIMULASI BUTA WARNA KEMISKINAN 2024
+# ------------------------------------------------------------
+
+peta_kemiskinan_2024 <- buat_peta_kemiskinan_cb(
+  data_kemiskinan_2024,
+  palet_kemiskinan,
+  "Penglihatan normal"
+)
+
+peta_kemiskinan_deutan <- buat_peta_kemiskinan_cb(
+  data_kemiskinan_2024,
+  colorspace::deutan(palet_kemiskinan),
+  "Deuteranopia (simulasi)"
+)
+
+peta_kemiskinan_protan <- buat_peta_kemiskinan_cb(
+  data_kemiskinan_2024,
+  colorspace::protan(palet_kemiskinan),
+  "Protanopia (simulasi)"
+)
+
+
+
+# ------------------------------------------------------------
+# 19. MENGGABUNGKAN PETA UJI AKSESIBILITAS WARNA KEMISKINAN
+# ------------------------------------------------------------
+
+peta_kemiskinan_colorblind <- (
+  peta_kemiskinan_2024 +
+    labs(title = "Penglihatan normal")
+) |
+  (
+    peta_kemiskinan_deutan +
+      labs(title = "Deuteranopia (simulasi)")
+  ) |
+  (
+    peta_kemiskinan_protan +
+      labs(title = "Protanopia (simulasi)")
   )
 
-peta_kemiskinan
-
-# ------------------------------------------------------------
-# 20. UJI COLORBLIND KEMISKINAN
-# ------------------------------------------------------------
-
-deutan_kemiskinan <- deutan(
-  palet_kemiskinan
-)
-
-protan_kemiskinan <- protan(
-  palet_kemiskinan
-)
-
-# ------------------------------------------------------------
-# 21. VISUALISASI UJI COLORBLIND KEMISKINAN
-# ------------------------------------------------------------
-
-peta_kemiskinan_deutan <- ggplot(
-  peta_kemiskinan_2024
-) +
-  geom_sf(
-    aes(fill = kemiskinan),
-    color = "white",
-    linewidth = 0.3
+peta_kemiskinan_colorblind <-
+  peta_kemiskinan_colorblind +
+  patchwork::plot_layout(
+    ncol = 3,
+    guides = "keep"
   ) +
-  scale_fill_gradientn(
-    colors = deutan_kemiskinan,
-    name = "Kemiskinan (%)"
-  ) +
-  labs(
-    title = "Simulasi Deuteranopia",
-    subtitle = "Peta kemiskinan Sulawesi Selatan 2024"
-  ) +
-  theme_void()
+  patchwork::plot_annotation(
+    title = "Uji Aksesibilitas Warna — Kemiskinan Sulawesi Selatan 2024",
+    subtitle = paste(
+      "Perbandingan warna asli, deuteranopia,",
+      "dan protanopia"
+    ),
+    theme = theme(
+      plot.title = element_text(
+        face = "bold",
+        size = 16
+      ),
+      plot.subtitle = element_text(size = 11)
+    )
+  )
 
+print(peta_kemiskinan_colorblind)
 
-peta_kemiskinan_protan <- ggplot(
-  peta_kemiskinan_2024
-) +
-  geom_sf(
-    aes(fill = kemiskinan),
-    color = "white",
-    linewidth = 0.3
-  ) +
-  scale_fill_gradientn(
-    colors = protan_kemiskinan,
-    name = "Kemiskinan (%)"
-  ) +
-  labs(
-    title = "Simulasi Protanopia",
-    subtitle = "Peta kemiskinan Sulawesi Selatan 2024"
-  ) +
-  theme_void()
-
-
-peta_kemiskinan_deutan
-peta_kemiskinan_protan
-
-# ------------------------------------------------------------
-# 22. SIMPAN PETA KEMISKINAN
-# ------------------------------------------------------------
+# ============================================================
+# 20. MENYIMPAN PETA KEMISKINAN
+# ============================================================
 
 ggsave(
-  filename = "keluaran/peta_kemiskinan_2024.png",
-  plot = peta_kemiskinan,
-  width = 8,
-  height = 6,
-  dpi = 300
+  "keluaran/peta_kemiskinan_2022_2024.png",
+  peta_kemiskinan,
+  width = 13,
+  height = 7,
+  dpi = 300,
+  bg = "white"
 )
 
 ggsave(
-  filename = "keluaran/peta_kemiskinan_2024_deuteranopia.png",
-  plot = peta_kemiskinan_deutan,
-  width = 8,
-  height = 6,
-  dpi = 300
-)
-
-ggsave(
-  filename = "keluaran/peta_kemiskinan_2024_protanopia.png",
-  plot = peta_kemiskinan_protan,
-  width = 8,
-  height = 6,
-  dpi = 300
+  "keluaran/peta_kemiskinan_colorblind_2024.png",
+  peta_kemiskinan_colorblind,
+  width = 18,
+  height = 8,
+  dpi = 300,
+  bg = "white"
 )
 
 # ------------------------------------------------------------
-# 23. PESAN AKHIR
+# 21. PESAN AKHIR
 # ------------------------------------------------------------
 
 cat("\n========================================\n")
@@ -483,10 +716,7 @@ cat(
   "\n"
 )
 
-cat(
-  "Output IPM: keluaran/peta_ipm_2024.png\n"
-)
-
-cat(
-  "Output kemiskinan: keluaran/peta_kemiskinan_2024.png\n"
-)
+cat("Output IPM: keluaran/peta_ipm_2022_2024.png\n")
+cat("Output uji buta warna IPM: keluaran/peta_ipm_colorblind_2024.png\n")
+cat("Output kemiskinan: keluaran/peta_kemiskinan_2022_2024.png\n")
+cat("Output uji buta warna kemiskinan: keluaran/peta_kemiskinan_colorblind_2024.png\n")
