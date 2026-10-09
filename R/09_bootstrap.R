@@ -1,6 +1,6 @@
 # ============================================================
 # ATLAS VISUAL SULAWESI SELATAN
-# BOOTSTRAP 95% CI DAN GRAFIK KETIDAKPASTIAN
+# BOOTSTRAP 95% DAN GRAFIK KETIDAKPASTIAN
 # Indikator : IPM dan Kemiskinan
 # Periode   : 2022-2024
 # Replikasi : B = 1.999
