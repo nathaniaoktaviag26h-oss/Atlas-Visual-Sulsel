@@ -170,27 +170,56 @@ data_bersih <- data_bersih %>%
 
 
 # ------------------------------------------------------------
-
+# 7. CEK STRUKTUR DAN VALIDASI DATA
 # ------------------------------------------------------------
-# 7. CEK HASIL DATA
-# ------------------------------------------------------------
-
-print(data_bersih)
 
 cat("\nJumlah baris:", nrow(data_bersih), "\n")
-cat("Jumlah wilayah:", n_distinct(data_bersih$kabupaten_kota), "\n")
-cat("Jumlah tahun:", n_distinct(data_bersih$tahun), "\n")
-
-
-# ------------------------------------------------------------
-# 8. CEK DATA KOSONG
-# ------------------------------------------------------------
-
-cat("\nJumlah NA setiap variabel:\n")
-
-print(
-  colSums(is.na(data_bersih))
+cat(
+  "Jumlah wilayah:",
+  dplyr::n_distinct(data_bersih$kabupaten_kota),
+  "\n"
 )
+cat(
+  "Jumlah tahun:",
+  dplyr::n_distinct(data_bersih$tahun),
+  "\n"
+)
+
+# Validasi otomatis
+stopifnot(
+  dplyr::n_distinct(data_bersih$kabupaten_kota) == 24,
+  dplyr::n_distinct(data_bersih$tahun) >= 3
+)
+
+cat("Validasi jumlah wilayah dan tahun berhasil.\n")
+
+# ------------------------------------------------------------
+# 8. CEK DAN PENANGANAN DATA KOSONG
+# ------------------------------------------------------------
+
+jumlah_na <- colSums(is.na(data_bersih))
+
+cat("\nJumlah NA setiap kolom:\n")
+print(jumlah_na)
+
+if (any(jumlah_na > 0)) {
+  
+  cat("\nKolom yang memiliki data kosong:\n")
+  print(jumlah_na[jumlah_na > 0])
+  
+  cat(
+    "\nPemeriksaan dihentikan karena masih ada NA.",
+    "\nPeriksa hasil penggabungan data IPM, kemiskinan,",
+    "\ndan kode wilayah sebelum menyimpan data.\n"
+  )
+  
+  stop("Data kosong harus ditangani terlebih dahulu.")
+  
+} else {
+  
+  cat("\nTidak ditemukan data kosong pada data_bersih.\n")
+  
+}
 
 
 # ------------------------------------------------------------
