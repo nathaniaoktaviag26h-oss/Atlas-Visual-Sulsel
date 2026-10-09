@@ -1,17 +1,18 @@
 # ============================================================
 # ATLAS VISUAL SULAWESI SELATAN
-# BOOTSTRAP 95% DAN GRAFIK KETIDAKPASTIAN
+# BOOTSTRAP 95% + STAT_SK_BOOTSTRAP()
 # Indikator : IPM dan Kemiskinan
 # Periode   : 2022-2024
 # Replikasi : B = 1.999
 # ============================================================
 
 library(tidyverse)
+library(ggplot2)
 
 source("R/04_theme_palet_tim.R")
 
 # ============================================================
-# 1. MEMBACA DATA
+# 1. MEMBACA DAN MEMERIKSA DATA
 # ============================================================
 
 data_bersih <- readRDS("data/data-bersih/atlas_sulsel.rds")
@@ -21,32 +22,25 @@ stopifnot(
         names(data_bersih))
 )
 
-data_ipm <- data_bersih %>%
+data_atlas <- data_bersih %>%
   filter(tahun %in% 2022:2024) %>%
-  select(kabupaten_kota, tahun, ipm) %>%
-  drop_na()
+  select(kabupaten_kota, tahun, ipm, kemiskinan) %>%
+  filter(!is.na(kabupaten_kota))
 
-data_kemiskinan <- data_bersih %>%
-  filter(tahun %in% 2022:2024) %>%
-  select(kabupaten_kota, tahun, kemiskinan) %>%
-  drop_na()
-
-# Periksa satu baris per wilayah per tahun
-if (anyDuplicated(data_ipm[c("kabupaten_kota", "tahun")]) > 0 ||
-    anyDuplicated(data_kemiskinan[c("kabupaten_kota", "tahun")]) > 0) {
-  stop("Terdapat duplikasi wilayah-tahun.")
+if (anyDuplicated(data_atlas[c("kabupaten_kota", "tahun")]) > 0) {
+  stop("Terdapat duplikasi kombinasi wilayah dan tahun.")
 }
 
-# Pastikan data lengkap untuk masing-masing indikator
-cek_lengkap <- function(data, kolom_nilai) {
-  data %>%
-    count(kabupaten_kota, name = "n_tahun") %>%
-    filter(n_tahun != 3)
+cek_tahun <- data_atlas %>%
+  count(kabupaten_kota, name = "n_tahun")
+
+if (nrow(cek_tahun) != 24 || any(cek_tahun$n_tahun != 3)) {
+  stop("Diperlukan 24 wilayah dengan data tahun 2022-2024 lengkap.")
 }
 
-if (nrow(cek_lengkap(data_ipm, "ipm")) > 0 ||
-    nrow(cek_lengkap(data_kemiskinan, "kemiskinan")) > 0) {
-  stop("Periksa data: setiap wilayah harus memiliki tiga tahun lengkap.")
+if (any(!is.finite(data_atlas$ipm)) ||
+    any(!is.finite(data_atlas$kemiskinan))) {
+  stop("Ada nilai indikator yang tidak valid atau tidak lengkap.")
 }
 
 # ============================================================
@@ -58,12 +52,11 @@ hitung_bootstrap <- function(x, B = 1999, conf = 0.95) {
   x <- x[is.finite(x)]
   
   if (length(x) < 2) {
-    stop("Minimal dua pengamatan valid diperlukan.")
+    stop("Diperlukan minimal dua pengamatan valid.")
   }
   
-  if (B < 1999 || conf <= 0 || conf >= 1) {
-    stop("Periksa nilai B dan conf.")
-  }
+  if (B < 1999) stop("B minimal 1999.")
+  if (conf <= 0 || conf >= 1) stop("conf harus antara 0 dan 1.")
   
   hasil_boot <- replicate(
     B,
@@ -83,50 +76,188 @@ hitung_bootstrap <- function(x, B = 1999, conf = 0.95) {
 }
 
 # ============================================================
-# 3. BOOTSTRAP IPM SAJA
+# 3. HASIL BOOTSTRAP UNTUK TABEL
 # ============================================================
 
 set.seed(123)
 
-hasil_ipm <- data_ipm %>%
-  group_by(kabupaten_kota) %>%
-  summarise(
-    hasil = list(hitung_bootstrap(ipm, B = 1999)),
-    .groups = "drop"
-  ) %>%
-  unnest(hasil) %>%
-  arrange(estimasi) %>%
-  mutate(
-    nama_wilayah = factor(
-      as.character(kabupaten_kota),
-      levels = unique(as.character(kabupaten_kota))
+hitung_semua_wilayah <- function(data, variabel, nama_indikator) {
+  
+  data %>%
+    group_by(kabupaten_kota) %>%
+    summarise(
+      hasil = list(
+        hitung_bootstrap(
+          .data[[variabel]],
+          B = 1999,
+          conf = 0.95
+        )
+      ),
+      .groups = "drop"
+    ) %>%
+    unnest(hasil) %>%
+    mutate(indikator = nama_indikator) %>%
+    arrange(estimasi)
+}
+
+hasil_ipm <- hitung_semua_wilayah(
+  data_atlas, "ipm", "IPM"
+)
+
+hasil_kemiskinan <- hitung_semua_wilayah(
+  data_atlas, "kemiskinan", "Kemiskinan"
+)
+
+hasil_bootstrap <- bind_rows(hasil_ipm, hasil_kemiskinan)
+
+print(hasil_bootstrap)
+
+# ============================================================
+# 4. STAT_SK_BOOTSTRAP() DENGAN GGP ROTO
+# ============================================================
+
+StatSKBootstrap <- ggproto(
+  "StatSKBootstrap",
+  Stat,
+  
+  required_aes = c("x", "y"),
+  
+  compute_group = function(data, scales,
+                           B = 1999,
+                           conf = 0.95,
+                           seed = 123) {
+    
+    # x adalah indeks numerik wilayah
+    # y adalah nilai indikator tahunan
+    data <- data[
+      is.finite(data$x) & is.finite(data$y),
+      ,
+      drop = FALSE
+    ]
+    
+    if (nrow(data) < 2) {
+      return(data.frame())
+    }
+    
+    if (B < 1999) stop("B minimal 1999.")
+    if (conf <= 0 || conf >= 1) stop("conf harus antara 0 dan 1.")
+    
+    # Replikasi dapat diulang secara konsisten
+    set.seed(seed)
+    
+    nilai <- data$y
+    n <- length(nilai)
+    
+    hasil_boot <- replicate(
+      B,
+      mean(sample(nilai, size = n, replace = TRUE))
     )
+    
+    alpha <- 1 - conf
+    
+    data.frame(
+      x = mean(data$x),
+      y = mean(nilai),
+      ymin = unname(quantile(hasil_boot, alpha / 2)),
+      ymax = unname(quantile(hasil_boot, 1 - alpha / 2)),
+      n = n
+    )
+  }
+)
+
+stat_sk_bootstrap <- function(mapping = NULL,
+                              data = NULL,
+                              geom = "pointrange",
+                              position = "identity",
+                              ...,
+                              B = 1999,
+                              conf = 0.95,
+                              seed = 123,
+                              na.rm = FALSE,
+                              show.legend = NA,
+                              inherit.aes = TRUE) {
+  
+  layer(
+    stat = StatSKBootstrap,
+    data = data,
+    mapping = mapping,
+    geom = geom,
+    position = position,
+    show.legend = show.legend,
+    inherit.aes = inherit.aes,
+    params = list(
+      B = B,
+      conf = conf,
+      seed = seed,
+      na.rm = na.rm,
+      ...
+    )
+  )
+}
+
+# ============================================================
+# 5. MENYIAPKAN DATA UNTUK GRAFIK
+# ============================================================
+
+# Urutan wilayah berdasarkan rata-rata IPM
+urutan_ipm <- data_atlas %>%
+  group_by(kabupaten_kota) %>%
+  summarise(rataan = mean(ipm), .groups = "drop") %>%
+  arrange(rataan) %>%
+  pull(kabupaten_kota)
+
+data_grafik_ipm <- data_atlas %>%
+  mutate(
+    kabupaten_kota = factor(
+      kabupaten_kota,
+      levels = urutan_ipm
+    ),
+    urutan = as.numeric(kabupaten_kota)
+  )
+
+# Urutan wilayah berdasarkan rata-rata kemiskinan
+urutan_kemiskinan <- data_atlas %>%
+  group_by(kabupaten_kota) %>%
+  summarise(rataan = mean(kemiskinan), .groups = "drop") %>%
+  arrange(rataan) %>%
+  pull(kabupaten_kota)
+
+data_grafik_kemiskinan <- data_atlas %>%
+  mutate(
+    kabupaten_kota = factor(
+      kabupaten_kota,
+      levels = urutan_kemiskinan
+    ),
+    urutan = as.numeric(kabupaten_kota)
   )
 
 # ============================================================
-# 4. GRAFIK BOOTSTRAP IPM
+# 6. GRAFIK IPM MENGGUNAKAN STAT_SK_BOOTSTRAP()
 # ============================================================
 
 grafik_ipm <- ggplot(
-  hasil_ipm,
-  aes(x = estimasi, y = nama_wilayah)
+  data_grafik_ipm,
+  aes(x = urutan, y = ipm, group = kabupaten_kota)
 ) +
-  geom_errorbar(
-    aes(xmin = batas_bawah, xmax = batas_atas),
-    orientation = "y",
-    width = 0.18,
-    linewidth = 0.8,
-    colour = unname(palet_dasar["Netral"])
+  stat_sk_bootstrap(
+    B = 1999,
+    conf = 0.95,
+    seed = 123,
+    colour = unname(palet_indikator["IPM"]),
+    linewidth = 0.7,
+    fatten = 2.5
   ) +
-  geom_point(
-    size = 2.8,
-    colour = unname(palet_indikator["IPM"])
+  scale_x_continuous(
+    breaks = seq_along(urutan_ipm),
+    labels = urutan_ipm,
+    expand = expansion(add = 0.5)
   ) +
+  coord_flip() +
   labs(
     title = "Ketidakpastian Estimasi IPM",
     subtitle = "Rata-rata 2022-2024 | Bootstrap 95% | B = 1.999",
-    x = "Rata-rata Indeks Pembangunan Manusia (IPM)",
-    y = NULL,
+    x = NULL,
+    y = "Rata-rata Indeks Pembangunan Manusia (IPM)",
     caption = "Sumber: BPS Provinsi Sulawesi Selatan | Diolah"
   ) +
   theme_tim() +
@@ -144,50 +275,32 @@ grafik_ipm <- ggplot(
 print(grafik_ipm)
 
 # ============================================================
-# 5. BOOTSTRAP KEMISKINAN SAJA
-# ============================================================
-
-set.seed(456)
-
-hasil_kemiskinan <- data_kemiskinan %>%
-  group_by(kabupaten_kota) %>%
-  summarise(
-    hasil = list(hitung_bootstrap(kemiskinan, B = 1999)),
-    .groups = "drop"
-  ) %>%
-  unnest(hasil) %>%
-  arrange(estimasi) %>%
-  mutate(
-    nama_wilayah = factor(
-      as.character(kabupaten_kota),
-      levels = unique(as.character(kabupaten_kota))
-    )
-  )
-
-# ============================================================
-# 6. GRAFIK BOOTSTRAP KEMISKINAN
+# 7. GRAFIK KEMISKINAN MENGGUNAKAN STAT_SK_BOOTSTRAP()
 # ============================================================
 
 grafik_kemiskinan <- ggplot(
-  hasil_kemiskinan,
-  aes(x = estimasi, y = nama_wilayah)
+  data_grafik_kemiskinan,
+  aes(x = urutan, y = kemiskinan, group = kabupaten_kota)
 ) +
-  geom_errorbar(
-    aes(xmin = batas_bawah, xmax = batas_atas),
-    orientation = "y",
-    width = 0.18,
-    linewidth = 0.8,
-    colour = unname(palet_dasar["Netral"])
+  stat_sk_bootstrap(
+    B = 1999,
+    conf = 0.95,
+    seed = 456,
+    colour = unname(palet_indikator["Kemiskinan"]),
+    linewidth = 0.7,
+    fatten = 2.5
   ) +
-  geom_point(
-    size = 2.8,
-    colour = unname(palet_indikator["Kemiskinan"])
+  scale_x_continuous(
+    breaks = seq_along(urutan_kemiskinan),
+    labels = urutan_kemiskinan,
+    expand = expansion(add = 0.5)
   ) +
+  coord_flip() +
   labs(
     title = "Ketidakpastian Estimasi Kemiskinan",
     subtitle = "Rata-rata 2022-2024 | Bootstrap 95% | B = 1.999",
-    x = "Rata-rata Persentase Penduduk Miskin (%)",
-    y = NULL,
+    x = NULL,
+    y = "Rata-rata Persentase Penduduk Miskin (%)",
     caption = "Sumber: BPS Provinsi Sulawesi Selatan | Diolah"
   ) +
   theme_tim() +
@@ -205,7 +318,7 @@ grafik_kemiskinan <- ggplot(
 print(grafik_kemiskinan)
 
 # ============================================================
-# 7. MENYIMPAN HASIL SECARA TERPISAH
+# 8. MENYIMPAN TABEL DAN GRAFIK
 # ============================================================
 
 dir.create(
@@ -215,14 +328,12 @@ dir.create(
 )
 
 write_csv(
-  hasil_ipm %>%
-    mutate(nama_wilayah = as.character(nama_wilayah)),
+  hasil_ipm,
   "keluaran/bootstrap/hasil_bootstrap_ipm_2022_2024.csv"
 )
 
 write_csv(
-  hasil_kemiskinan %>%
-    mutate(nama_wilayah = as.character(nama_wilayah)),
+  hasil_kemiskinan,
   "keluaran/bootstrap/hasil_bootstrap_kemiskinan_2022_2024.csv"
 )
 
