@@ -436,10 +436,17 @@ gambar_halaman <- function() {
 # 8. SIMPAN
 # ============================================================
 
-dir.create("keluaran", showWarnings = FALSE)
+# Simpan PDF di folder utama proyek
+folder_simpan <- "."
 
-cairo_pdf("keluaran/infografis.pdf", width = W, height = H)
+dir.create(folder_simpan, showWarnings = FALSE, recursive = TRUE)
+
+# Nama file PDF
+file_pdf <- file.path(folder_simpan, "infografis.pdf")
+
+# Simpan infografis
+cairo_pdf(file_pdf, width = W, height = H)
 gambar_halaman()
 dev.off()
 
-message("Selesai: keluaran/infografis.pdf")
+message("Selesai: ", normalizePath(file_pdf))
