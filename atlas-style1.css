@@ -1,0 +1,227 @@
+/* ============================================================
+   ATLAS VISUAL SULAWESI SELATAN — tema editorial
+   Disesuaikan untuk HTML keluaran Quarto; isi atlas tidak diubah.
+   ============================================================ */
+:root {
+  --atlas-ink: #193638;
+  --atlas-teal: #1d6665;
+  --atlas-mint: #e9f3ef;
+  --atlas-coral: #c76b52;
+  --atlas-sand: #f7f3eb;
+  --atlas-muted: #637575;
+}
+
+html { scroll-behavior: smooth; scroll-padding-top: 1.5rem; }
+body {
+  color: var(--atlas-ink);
+  background: #fff;
+  line-height: 1.68;
+  font-size: 16px;
+}
+
+/* Header lebar penuh, seperti atlas referensi */
+#title-block-header {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 3.1rem max(2rem, calc((100vw - 1120px) / 2)) 2.7rem;
+  background: var(--atlas-ink);
+  color: #fff;
+  border-bottom: 5px solid var(--atlas-coral);
+}
+#title-block-header .title,
+#title-block-header h1 {
+  color: #fff !important;
+  font-size: clamp(2rem, 4vw, 3.2rem);
+  line-height: 1.13;
+  margin: 0 0 .7rem;
+  letter-spacing: -.035em;
+}
+#title-block-header .subtitle,
+#title-block-header p {
+  color: #e6f1ed !important;
+  max-width: 850px;
+  margin: .4rem 0;
+}
+#title-block-header .quarto-title-meta { color: #e6f1ed; }
+#title-block-header .quarto-title-meta-heading { color: #c8d9d4; }
+
+/* Kolom isi di tengah dan daftar isi di margin kanan */
+#quarto-content.page-layout-article {
+  display: grid;
+  grid-template-columns: minmax(0, 900px) minmax(205px, 250px);
+  column-gap: clamp(1.5rem, 4vw, 4rem);
+  justify-content: center;
+  align-items: start;
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 2.2rem 2rem 4rem;
+}
+#quarto-document-content {
+  grid-column: 1;
+  grid-row: 1;
+  min-width: 0;
+  max-width: 900px;
+  width: 100%;
+}
+#quarto-margin-sidebar {
+  grid-column: 2;
+  grid-row: 1;
+  position: sticky;
+  top: 1.2rem;
+  align-self: start;
+  max-height: calc(100vh - 2.4rem);
+  overflow-y: auto;
+  padding: .2rem 0 1rem 1rem;
+  border-left: 1px solid #dbe5e0;
+  background: #fff;
+}
+#TOC { font-size: .88rem; }
+#TOC #toc-title {
+  color: var(--atlas-muted);
+  font-size: .72rem;
+  font-weight: 800;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  margin: 0 0 .8rem;
+}
+#TOC ul { padding-left: .9rem; }
+#TOC a {
+  display: block;
+  color: #526665;
+  text-decoration: none;
+  padding: .28rem .45rem;
+  border-left: 2px solid transparent;
+  border-radius: 0 5px 5px 0;
+  line-height: 1.35;
+}
+#TOC a:hover, #TOC a.active {
+  color: var(--atlas-teal);
+  background: var(--atlas-mint);
+  border-left-color: var(--atlas-coral);
+}
+
+/* Tipografi dan hierarki bagian */
+#quarto-document-content > h1 {
+  color: var(--atlas-ink);
+  font-size: 1.8rem;
+  line-height: 1.25;
+  margin: 2.9rem 0 1rem;
+  padding: 0 0 .65rem;
+  border-bottom: 1px solid #d9e7e1;
+  letter-spacing: -.025em;
+}
+#quarto-document-content > h1:first-child { margin-top: 0; }
+#quarto-document-content h2 {
+  color: var(--atlas-ink);
+  margin: 2rem 0 .8rem;
+  padding-bottom: .4rem;
+  font-size: 1.35rem;
+  border-bottom: 1px solid #e3e9e6;
+}
+#quarto-document-content h3 {
+  color: var(--atlas-ink);
+  margin: 1.7rem 0 .6rem;
+  font-size: 1.1rem;
+}
+#quarto-document-content p { margin: .7rem 0 1rem; }
+#quarto-document-content img { max-width: 100%; height: auto; }
+#quarto-document-content figure { margin: 1rem 0 1.5rem; }
+#quarto-document-content a { color: var(--atlas-teal); }
+
+/* Kartu, catatan, tabel, dan keterangan gambar */
+.hero-note {
+  background: var(--atlas-mint);
+  border-left: 5px solid var(--atlas-coral);
+  padding: 1.15rem 1.4rem;
+  border-radius: 0 12px 12px 0;
+  margin: 1rem 0 1.7rem;
+}
+.grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin: 1rem 0 1.5rem;
+}
+.panel-card {
+  background: #fbfaf7;
+  border: 1px solid #e1e9e4;
+  border-radius: 12px;
+  padding: 1rem;
+  min-width: 0;
+}
+.panel-card h3 { margin-top: .3rem; }
+.panel-card img { width: 100%; height: auto; }
+.callout-note {
+  border-left-color: var(--atlas-teal) !important;
+  background: #f1f7f5 !important;
+}
+#quarto-document-content table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .94rem;
+}
+#quarto-document-content th {
+  background: var(--atlas-mint);
+  text-align: left;
+}
+#quarto-document-content th,
+#quarto-document-content td {
+  padding: .6rem .7rem;
+  border-bottom: 1px solid #dfe7e3;
+}
+figcaption, .figure-caption { color: var(--atlas-muted); font-size: .9rem; }
+.footer-note {
+  border-top: 1px solid #d9e7e1;
+  margin-top: 2rem;
+  padding-top: 1rem;
+  color: var(--atlas-muted);
+}
+.github-card {
+  display: flex; align-items: center; gap: 1rem;
+  padding: 1.2rem 1.35rem; margin: 1rem 0 1.6rem;
+  border: 1px solid #d9e7e1; border-radius: 14px;
+  background: linear-gradient(110deg, #f1f7f5, #fffaf5);
+}
+.github-card-icon {
+  display: grid; place-items: center; flex: 0 0 48px; height: 48px;
+  border-radius: 50%; background: var(--atlas-ink); color: #fff;
+  font-weight: 800; letter-spacing: -.04em;
+}
+.github-card-content { min-width: 0; }
+.github-card-content p { margin: .25rem 0 .45rem; color: var(--atlas-muted); font-size: .93rem; }
+.github-card-content a { font-weight: 700; text-decoration: none; }
+.github-card-content a:hover { text-decoration: underline; }
+
+/* Responsif: daftar isi pindah ke atas pada layar kecil */
+@media (max-width: 900px) {
+  #quarto-content.page-layout-article {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1.25rem 1.2rem 3rem;
+  }
+  #quarto-margin-sidebar {
+    position: relative;
+    top: auto;
+    order: 0;
+    width: 100%;
+    max-height: none;
+    overflow: visible;
+    border-left: 0;
+    border-bottom: 1px solid #dbe5e0;
+    padding: 0 0 1rem;
+    margin-bottom: 1rem;
+  }
+  #quarto-document-content { order: 1; }
+  #TOC ul { display: flex; flex-wrap: wrap; gap: .2rem .4rem; }
+  #TOC a { padding: .3rem .45rem; }
+  #title-block-header { padding: 2.2rem 1.25rem; }
+  #quarto-document-content > h1 { font-size: 1.55rem; }
+}
+@media (max-width: 560px) {
+  .grid-2 { grid-template-columns: 1fr; }
+  body { font-size: 15px; }
+  .github-card { align-items: flex-start; padding: 1rem; }
+}
